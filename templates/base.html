@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IT Ticketing System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Modern Color Palette */
+            --primary-dark: #0f172a;
+            --primary-dark-2: #1e293b;
+            --primary-dark-3: #334155;
+            --accent-primary: #3b82f6;
+            --accent-primary-hover: #2563eb;
+            --accent-secondary: #10b981;
+            --accent-tertiary: #f59e0b;
+            --accent-danger: #ef4444;
+            
+            /* Light Theme */
+            --light-bg: #f8fafc;
+            --light-bg-2: #f1f5f9;
+            --light-bg-3: #e2e8f0;
+            --light-text: #1e293b;
+            --light-text-muted: #64748b;
+            
+            /* Dark Theme */
+            --dark-bg: #0f172a;
+            --dark-bg-2: #1e293b;
+            --dark-bg-3: #334155;
+            --dark-text: #f8fafc;
+            --dark-text-muted: #94a3b8;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            
+            /* Transitions */
+            --transition-fast: all 0.15s ease-in-out;
+            --transition-normal: all 0.3s ease-in-out;
+            --transition-slow: all 0.5s ease-in-out;
+            
+            /* Border Radius */
+            --radius-sm: 0.25rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--light-text);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--light-bg-3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-dark-3);
+            border-radius: var(--radius-full);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark-2);
+        }
+
+        /* Navbar Styling */
+        .navbar-top {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-dark-2));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-lg);
+            z-index: 1030;
+            padding: 0.75rem 1.5rem;
+            height: 70px;
+        }
+        
+        .navbar-brand {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: var(--transition-normal);
+        }
+        
+        .navbar-brand:hover {
+            color: var(--accent-primary);
+        }
+        
+        .navbar-brand .logo-icon {
+            font-size: 1.75rem;
+            color: var(--accent-primary);
+        }
+
+        /* Search Bar Styling */
+        .search-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .search-input {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: var(--radius-full);
+            transition: var(--transition-normal);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-input:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            outline: none;
+        }
+        
+        .search-btn {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            transition: var(--transition-normal);
+        }
+        
+        .search-btn:hover {
+            color: var(--accent-primary);
+        }
+
+        /* User Dropdown */
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition-normal);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .dropdown-menu {
+            border: none;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-xl);
+            padding: 0.5rem 0;
+            margin-top: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .dropdown-item {
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            color: var(--light-text);
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--light-bg-2);
+            color: var(--accent-primary);
+        }
+        
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .dropdown-divider {
+            border-color: var(--light-bg-3);
+            margin: 0.5rem 0;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(to bottom, var(--primary-dark), var(--primary-dark-2));
+            color: var(--dark-text);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1020;
+            padding-top: 70px;
+            transition: var(--transition-normal);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        
+        .sidebar.collapsed .nav-link span {
+            display: none;
+        }
+        
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.75rem;
+        }
+        
+        .sidebar.collapsed .nav-link i {
+            margin-right: 0;
+            font-size: 1.25rem;
+        }
+        
+        .sidebar.collapsed .sidebar-header {
+            padding: 1rem 0.5rem;
+            justify-content: center;
+        }
+        
+        .sidebar.collapsed .sidebar-header h5 {
+            display: none;
+        }
+        
+        .sidebar.collapsed .sidebar-header .btn-toggle-sidebar {
+            transform: rotate(180deg);
+        }
+        
+        .sidebar-header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar-header h5 {
+            color: var(--dark-text-muted);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0;
+        }
+        
+        .btn-toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--dark-text-muted);
+            font-size: 0.875rem;
+            transition: var(--transition-normal);
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+        }
+        
+        .btn-toggle-sidebar:hover {
+            color: var(--accent-primary);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Navigation Links */
+        .nav-link {
+            color: var(--dark-text-muted);
+            padding: 0.75rem 1.5rem;
+            margin: 0.25rem 0.75rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+            transition: var(--transition-normal);
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+        
+        .nav-link.active {
+            color: white;
+            background: linear-gradient(to right, var(--accent-primary), rgba(59, 130, 246, 0.3));
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -2px rgba(59, 130, 246, 0.2);
+        }
+        
+        .nav-link i {
+            font-size: 1.1rem;
+            transition: var(--transition-normal);
+        }
+        
+        .nav-link.active i {
+            color: white;
+        }
+        
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
+        
+        .badge-notification {
+            margin-left: auto;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            background-color: var(--accent-danger);
+            color: white;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 280px;
+            padding-top: 85px;
+            padding-bottom: 2rem;
+            flex-grow: 1;
+            transition: var(--transition-normal);
+            min-height: calc(100vh - 70px);
+        }
+        
+        .main-content.collapsed {
+            margin-left: 80px;
+        }
+        
+        .content-container {
+            padding: 1.5rem;
+        }
+
+        /* Flash Messages */
+        .alert {
+            border: none;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+        }
+        
+        .alert-success {
+            background-color: #f0fdf4;
+            color: #166534;
+            border-left-color: #22c55e;
+        }
+        
+        .alert-danger {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-left-color: #ef4444;
+        }
+        
+        .alert-info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-left-color: #3b82f6;
+        }
+        
+        .alert-warning {
+            background-color: #fffbeb;
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-dark-2));
+            color: var(--dark-text-muted);
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.875rem;
+            margin-left: 280px;
+            transition: var(--transition-normal);
+        }
+        
+        footer.collapsed {
+            margin-left: 80px;
+        }
+        
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--accent-secondary);
+            position: relative;
+        }
+        
+        .status-indicator::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background-color: rgba(16, 185, 129, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+                z-index: 1040;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+            
+            footer {
+                margin-left: 0 !important;
+            }
+            
+            .navbar-toggler-sidebar {
+                display: block !important;
+            }
+            
+            .sidebar-header .btn-toggle-sidebar {
+                display: none;
+            }
+        }
+        
+        .navbar-toggler-sidebar {
+            display: none;
+            color: white;
+            border: none;
+            font-size: 1.25rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        /* Card Styling */
+        .card {
+            border: none;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-normal);
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid var(--light-bg-3);
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            font-weight: 500;
+            padding: 0.5rem 1.25rem;
+            border-radius: var(--radius-md);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--accent-primary-hover);
+            border-color: var(--accent-primary-hover);
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            font-weight: 500;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        /* Tables */
+        .table {
+            color: var(--light-text);
+            border-color: var(--light-bg-3);
+        }
+        
+        .table thead th {
+            background-color: var(--light-bg-2);
+            border-bottom-width: 1px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: var(--light-text-muted);
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: var(--light-bg-2);
+        }
+        
+        /* Badges */
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            border-radius: var(--radius-sm);
+        }
+        
+        /* Forms */
+        .form-control, .form-select {
+            border: 1px solid var(--light-bg-3);
+            border-radius: var(--radius-md);
+            padding: 0.5rem 0.75rem;
+            transition: var(--transition-normal);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* Custom utility classes */
+        .text-muted {
+            color: var(--light-text-muted) !important;
+        }
+        
+        .bg-light {
+            background-color: var(--light-bg-2) !important;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-top fixed-top">
+        <div class="container-fluid">
+            <!-- Sidebar Toggler for mobile -->
+            <button class="navbar-toggler navbar-toggler-sidebar d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Brand Logo -->
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-ticket-alt logo-icon"></i>
+                <span class="d-none d-sm-inline">IT Ticketing</span>
+            </a>
+
+            <!-- Desktop Sidebar Toggle -->
+            <button class="btn btn-link text-white d-none d-lg-block me-2 btn-toggle-sidebar" id="sidebarToggleDesktop">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <!-- Search Bar -->
+            <div class="d-none d-lg-flex search-container position-relative mx-4">
+                <input type="search" class="form-control search-input ps-4 pe-5" placeholder="Search tickets, users...">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <!-- User Menu -->
+            <div class="navbar-nav ms-auto">
+                {% if user %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center py-0" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar me-2">
+                                {{ user.name[0]|upper }}
+                            </div>
+                            <div class="d-none d-md-flex flex-column text-start">
+                                <span class="fw-medium">{{ user.name }}</span>
+                                <small class="text-white-50">{{ user.role }}</small>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <h6 class="dropdown-header text-uppercase text-muted small">User Menu</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-user-circle me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-cog me-2"></i>Settings
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light" href="{{ url_for('login') }}">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                    </li>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar / Offcanvas Menu -->
+    <div class="sidebar" id="sidebarOffcanvas">
+        <div class="offcanvas-header d-lg-none">
+            <h5 class="offcanvas-title text-white">Navigation</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        
+        <div class="sidebar-header d-none d-lg-flex">
+            <h5 class="mb-0">Main Menu</h5>
+            <button class="btn btn-link btn-toggle-sidebar" id="sidebarToggleDesktop">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+        
+        <div class="offcanvas-body p-0 flex-grow-1">
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                {% if user %}
+                    {% if user.role == 'User' %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('create_ticket') }}" class="nav-link {% if request.endpoint == 'create_ticket' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Create Ticket">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Create Ticket</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="nav-item">
+                        <a href="{{ url_for('ticket_list') }}" class="nav-link {% if request.endpoint == 'ticket_list' or request.endpoint == 'ticket_detail' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Tickets">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span>Tickets</span>
+                        </a>
+                    </li>
+                    
+                    {% if user.role in ['Admin', 'HOD', 'IT Head'] %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('user_list') }}" class="nav-link {% if request.endpoint == 'user_list' or request.endpoint == 'create_user' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Users">
+                            <i class="fas fa-users"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="nav-item">
+                        <a href="{{ url_for('notifications_page') }}" class="nav-link {% if request.endpoint == 'notifications_page' %}active{% endif %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            <span>Notifications</span>
+                            <span id="unread-notifications-count" class="badge-notification d-none">0</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="content-container">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-4">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Content Block -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container-fluid d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <div class="system-status mb-2 mb-md-0">
+                <span class="status-indicator"></span>
+                <span>System Status: Operational</span>
+            </div>
+            <div class="text-center text-md-end">
+                &copy; {{ now.year }} IT Ticketing System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize AOS animations
+            AOS.init({
+                duration: 600,
+                easing: 'ease-in-out',
+                once: true
+            });
+            
+            // Notification count
+            const unreadCountSpan = document.getElementById('unread-notifications-count');
+            
+            async function fetchUnreadNotifications() {
+                try {
+                    const response = await fetch('/api/notifications/unread_count');
+                    const data = await response.json();
+                    if (data.unread_count !== undefined) {
+                        unreadCountSpan.textContent = data.unread_count;
+                        if (data.unread_count > 0) {
+                            unreadCountSpan.classList.remove('d-none');
+                        } else {
+                            unreadCountSpan.classList.add('d-none');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching unread notifications:', error);
+                    unreadCountSpan.classList.add('d-none');
+                }
+            }
+            
+            // Fetch on page load
+            fetchUnreadNotifications();
+            
+            // Sidebar functionality
+            const sidebar = document.getElementById('sidebarOffcanvas');
+            const mainContent = document.querySelector('.main-content');
+            const footer = document.querySelector('footer');
+            const sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop');
+            
+            function setSidebarState(isCollapsed) {
+                if (isCollapsed) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('collapsed');
+                    footer.classList.add('collapsed');
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                    initializeTooltips();
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    mainContent.classList.remove('collapsed');
+                    footer.classList.remove('collapsed');
+                    localStorage.setItem('sidebarCollapsed', 'false');
+                    destroyTooltips();
+                }
+            }
+            
+            function initializeSidebar() {
+                if (window.innerWidth >= 992) {
+                    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                    setSidebarState(isCollapsed);
+                }
+            }
+            
+            if (sidebarToggleDesktop) {
+                sidebarToggleDesktop.addEventListener('click', function() {
+                    const isCollapsed = sidebar.classList.contains('collapsed');
+                    setSidebarState(!isCollapsed);
+                });
+            }
+            
+            window.addEventListener('resize', initializeSidebar);
+            initializeSidebar();
+            
+            // Offcanvas for mobile
+            const offcanvasInstance = new bootstrap.Offcanvas(sidebar);
+            
+            sidebar.addEventListener('show.bs.offcanvas', function() {
+                sidebar.classList.remove('collapsed');
+                destroyTooltips();
+            });
+            
+            sidebar.addEventListener('hidden.bs.offcanvas', function() {
+                if (window.innerWidth >= 992 && localStorage.getItem('sidebarCollapsed') === 'true') {
+                    sidebar.classList.add('collapsed');
+                    initializeTooltips();
+                }
+            });
+            
+            // Tooltips for collapsed sidebar
+            let tooltipInstances = [];
+            
+            function initializeTooltips() {
+                destroyTooltips();
+                
+                if (sidebar.classList.contains('collapsed') && window.innerWidth >= 992) {
+                    const tooltipTriggerList = [].slice.call(sidebar.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tooltipInstances = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl, {
+                            placement: 'right'
+                        });
+                    });
+                }
+            }
+            
+            function destroyTooltips() {
+                tooltipInstances.forEach(tooltip => {
+                    tooltip.dispose();
+                });
+                tooltipInstances = [];
+            }
+            
+            // Initialize tooltips based on sidebar state
+            initializeTooltips();
+            
+            // Enable all tooltips (except sidebar ones which are handled separately)
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]:not(.sidebar [data-bs-toggle="tooltip"])'));
+            const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

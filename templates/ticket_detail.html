@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket Details - IT Ticketing{% endblock %}
+
+{% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Custom CSS Styles */
+    :root {
+        --primary-blue: #3b82f6;
+        --primary-blue-hover: #2563eb;
+        --success-green: #10b981;
+        --success-green-hover: #059669;
+        --warning-orange: #f59e0b;
+        --warning-orange-hover: #d97706;
+        --danger-red: #ef4444;
+        --danger-red-hover: #dc2626;
+        --gray-800: #1f2937;
+        --gray-700: #374151;
+        --gray-600: #4b5563;
+        --gray-400: #9ca3af;
+        --gray-300: #d1d5db;
+    }
+
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Card Animations */
+    .card {
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Status Badge Animations */
+    .status-badge {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .status-badge::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .status-badge:hover::before {
+        left: 100%;
+    }
+
+    /* Button Enhancements */
+    .btn {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        font-weight: 500;
+        letter-spacing: 0.025em;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Modal Animations */
+    .modal {
+        backdrop-filter: blur(5px);
+        animation: modalFadeIn 0.3s ease forwards; /* Use forwards to keep the final state */
+    }
+
+    .modal-content {
+        animation: modalSlideIn 0.3s ease forwards; /* Use forwards to keep the final state */
+    }
+
+    @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes modalSlideIn {
+        from { 
+            opacity: 0; 
+            transform: translateY(-20px) scale(0.95); 
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+        }
+    }
+
+    /* Form Enhancements */
+    .form-input {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(55, 65, 81, 0.8);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        background: rgba(55, 65, 81, 1);
+    }
+
+    /* Comment Card Animations */
+    .comment-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+
+    .comment-card:hover {
+        border-left-color: var(--primary-blue);
+        transform: translateX(4px);
+    }
+
+    /* Attachment Card Enhancements */
+    .attachment-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .attachment-card:hover {
+        border-color: var(--primary-blue);
+        background: rgba(59, 130, 246, 0.05);
+    }
+
+    /* Priority Indicators */
+    .priority-critical {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    /* Gradient Text */
+    .gradient-text {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--gray-800);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--gray-600);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-400);
+    }
+
+    /* Status Color Variations */
+    .status-open { @apply bg-blue-600; }
+    .status-in-progress { @apply bg-yellow-600; }
+    .status-resolved { @apply bg-green-600; }
+    .status-closed { @apply bg-gray-600; }
+    .status-pending { @apply bg-orange-600; }
+    .status-rejected { @apply bg-red-600; }
+
+    /* Priority Color Variations */
+    .priority-critical { @apply bg-red-600; }
+    .priority-high { @apply bg-orange-600; }
+    .priority-medium { @apply bg-yellow-600; }
+    .priority-low { @apply bg-green-600; }
+
+    /* Dark theme enhancements */
+    .glass-effect {
+        background: rgba(31, 41, 55, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Typography improvements */
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Interactive elements */
+    .interactive {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .interactive:active {
+        transform: scale(0.98);
+    }
+</style>
+<div class="container mx-auto px-4 py-6">
+    <!-- Ticket Header -->
+    <div class="bg-gray-800 rounded-lg p-6 mb-6 glass-effect">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-white mb-2 text-shadow">{{ ticket.title }}</h1>
+                <p class="text-gray-400">Ticket ID: <span class="font-mono">{{ ticket.id }}</span></p>
+            </div>
+            <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                <span class="px-3 py-1 rounded-full text-sm font-medium status-badge
+                    {% if ticket.status == 'Open' %}status-open
+                    {% elif ticket.status == 'In Progress' %}status-in-progress
+                    {% elif ticket.status == 'Resolved' %}status-resolved
+                    {% elif ticket.status == 'Closed' %}status-closed
+                    {% elif 'Pending' in ticket.status %}status-pending
+                    {% elif ticket.status == 'Rejected' %}status-rejected
+                    {% else %}bg-gray-600 text-white{% endif %}">
+                    {{ ticket.status }}
+                </span>
+                <span class="px-3 py-1 rounded-full text-sm font-medium status-badge
+                    {% if ticket.priority == 'Critical' %}priority-critical
+                    {% elif ticket.priority == 'High' %}priority-high
+                    {% elif ticket.priority == 'Medium' %}priority-medium
+                    {% else %}priority-low{% endif %}">
+                    {{ ticket.priority }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm info-grid">
+            <div>
+                <span class="text-gray-400">Category:</span>
+                <span class="text-white ml-2 font-semibold">{{ ticket.category }}</span>
+            </div>
+            <div>
+                <span class="text-gray-400">Created by:</span>
+                <span class="text-white ml-2">{{ ticket.created_by_name }}</span>
+            </div>
+            <div>
+                <span class="text-gray-400">Created:</span>
+                <span class="text-white ml-2">{{ ticket.created_at|datetime }}</span>
+            </div>
+            {% if ticket.assigned_to_name %}
+            <div>
+                <span class="text-gray-400">Assigned to:</span>
+                <span class="text-white ml-2">{{ ticket.assigned_to_name }}</span>
+            </div>
+            {% endif %}
+            <div>
+                <span class="text-gray-400">Last Updated:</span>
+                <span class="text-white ml-2">{{ ticket.updated_at|datetime }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Description -->
+    <div class="bg-gray-800 rounded-lg p-6 mb-6 glass-effect hover-lift">
+        <h2 class="text-xl font-semibold text-white mb-4 gradient-text">Description</h2>
+        <p class="text-gray-300 whitespace-pre-wrap">{{ ticket.description }}</p>
+    </div>
+
+    <!-- Attachments -->
+    {% if ticket.attachments %}
+    <div class="bg-gray-800 rounded-lg p-6 mb-6 glass-effect">
+        <h2 class="text-xl font-semibold text-white mb-4 gradient-text">Attachments</h2>
+        <div class="space-y-2">
+            {% for attachment in ticket.attachments %}
+            <div class="flex items-center justify-between bg-gray-700 p-3 rounded attachment-card">
+                <span class="text-gray-300">{{ attachment.original_name }}</span>
+                <a href="{{ url_for('download_attachment', ticket_id=ticket.id, stored_name=attachment.stored_name) }}" 
+                   class="btn bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                    Download
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Approval History -->
+    {% if ticket.approval_history %}
+    <div class="bg-gray-800 rounded-lg p-6 mb-6 glass-effect">
+        <h2 class="text-xl font-semibold text-white mb-4 gradient-text">Approval History</h2>
+        <div class="space-y-3">
+            {% for approval in ticket.approval_history %}
+            <div class="bg-gray-700 p-4 rounded comment-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-white font-medium">{{ approval.approver }}</span>
+                        <span class="text-gray-400 text-sm ml-2">({{ approval.role }})</span>
+                    </div>
+                    <span class="px-2 py-1 rounded text-xs
+                        {% if approval.action == 'Approved' %}bg-green-600 text-white
+                        {% else %}bg-red-600 text-white{% endif %}">
+                        {{ approval.action }}
+                    </span>
+                </div>
+                <p class="text-gray-400 text-sm mt-1">{{ approval.timestamp|datetime }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="bg-gray-800 rounded-lg p-6 mb-6 glass-effect">
+        <h2 class="text-xl font-semibold text-white mb-4 gradient-text">Actions</h2>
+        <div class="flex flex-wrap gap-4">
+            
+            <!-- HOD Approval Actions -->
+            {% if user.role == 'HOD' and ticket.status == 'Pending HOD Approval' %}
+            <a href="{{ url_for('approve_ticket', ticket_id=ticket.id, action='approve') }}" 
+               class="btn bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Approve
+            </a>
+            <a href="{{ url_for('approve_ticket', ticket_id=ticket.id, action='reject') }}" 
+               class="btn bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                Reject
+            </a>
+            {% endif %}
+
+            <!-- IT Head Approval Actions -->
+            {% if user.role == 'IT Head' and ticket.status == 'Pending IT Head Approval' %}
+            <a href="{{ url_for('approve_ticket', ticket_id=ticket.id, action='approve') }}" 
+               class="btn bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Approve
+            </a>
+            <a href="{{ url_for('approve_ticket', ticket_id=ticket.id, action='reject') }}" 
+               class="btn bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                Reject
+            </a>
+            {% endif %}
+
+            <!-- Assignment (IT Head/Admin) -->
+            {% if user.role in ['IT Head', 'Admin'] and not ticket.assigned_to %}
+            <button data-modal-target="assignModal" 
+                    class="btn bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Assign Ticket
+            </button>
+            {% endif %}
+
+            <!-- Status Update (Technician) -->
+            {% if user.role == 'Technician' and ticket.assigned_to == user.id %}
+            <button data-modal-target="statusModal" 
+                    class="btn bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+                Update Status
+            </button>
+            {% endif %}
+
+            <!-- Add Comment -->
+            <button data-modal-target="commentModal" 
+                    class="btn bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                Add Comment
+            </button>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="bg-gray-800 rounded-lg p-6 glass-effect">
+        <h2 class="text-xl font-semibold text-white mb-4 gradient-text">Comments & Updates</h2>
+        {% if ticket.comments %}
+        <div class="space-y-4">
+            {% for comment in ticket.comments %}
+            <div class="bg-gray-700 p-4 rounded comment-card">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center">
+                        <span class="text-white font-medium">{{ comment.user_name }}</span>
+                        {% if comment.type == 'status_update' %}
+                        <span class="bg-blue-600 text-white px-2 py-1 rounded text-xs ml-2">Status Update</span>
+                        {% elif comment.type == 'assignment' %}
+                        <span class="bg-green-600 text-white px-2 py-1 rounded text-xs ml-2">Assignment</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-gray-400 text-sm">{{ comment.timestamp|datetime }}</span>
+                </div>
+                <p class="text-gray-300">{{ comment.message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400">No comments yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Assignment Modal -->
+{% if user.role in ['IT Head', 'Admin'] and not ticket.assigned_to %}
+<div id="assignModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="modal-content bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 glass-effect">
+        <h3 class="text-lg font-semibold text-white mb-4">Assign Ticket</h3>
+        <form method="POST" action="{{ url_for('assign_ticket', ticket_id=ticket.id) }}">
+            <div class="mb-4">
+                <label for="assigned_to" class="block text-gray-300 text-sm font-medium mb-2">Assign to Technician:</label>
+                <select id="assigned_to" name="assigned_to" class="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 form-input">
+                    <option value="">Select Technician</option>
+                    {% for tech in technicians %}
+                    <option value="{{ tech.id }}">{{ tech.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" data-modal-close="assignModal" 
+                        class="btn bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
+                <button type="submit" class="btn bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Assign</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Status Update Modal -->
+{% if user.role == 'Technician' and ticket.assigned_to == user.id %}
+<div id="statusModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="modal-content bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 glass-effect">
+        <h3 class="text-lg font-semibold text-white mb-4">Update Status</h3>
+        <form method="POST" action="{{ url_for('update_ticket', ticket_id=ticket.id) }}">
+            <div class="mb-4">
+                <label for="status" class="block text-gray-300 text-sm font-medium mb-2">Status:</label>
+                <select id="status" name="status" class="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 form-input">
+                    {% for status in statuses %}
+                    <option value="{{ status }}" {% if status == ticket.status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" data-modal-close="statusModal" 
+                        class="btn bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
+                <button type="submit" class="btn bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Comment Modal -->
+<div id="commentModal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="modal-content bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4 glass-effect">
+        <h3 class="text-lg font-semibold text-white mb-4">Add Comment</h3>
+        <form method="POST" action="{{ url_for('update_ticket', ticket_id=ticket.id) }}">
+            <div class="mb-4">
+                <label for="comment" class="block text-gray-300 text-sm font-medium mb-2">Comment:</label>
+                <textarea id="comment" name="comment" rows="4" class="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 form-input" 
+                          placeholder="Enter your comment..." required></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" data-modal-close="commentModal" 
+                        class="btn bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">Cancel</button>
+                <button type="submit" class="btn bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Comment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // JavaScript for modal handling
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get all buttons that open modals
+        const modalOpenButtons = document.querySelectorAll('[data-modal-target]');
+        // Get all buttons that close modals
+        const modalCloseButtons = document.querySelectorAll('[data-modal-close]');
+        // Get all modal overlay elements
+        const modals = document.querySelectorAll('.modal');
+
+        // Function to open a modal
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex'); // Ensure flex is applied for centering
+                // Set focus to the first focusable element inside the modal for accessibility
+                const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusableElements.length > 0) {
+                    focusableElements[0].focus();
+                }
+            }
+        }
+
+        // Function to close a modal
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Event listeners for opening modals
+        modalOpenButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modalId = button.dataset.modalTarget;
+                openModal(modalId);
+            });
+        });
+
+        // Event listeners for closing modals
+        modalCloseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const modalId = button.dataset.modalClose;
+                closeModal(modalId);
+            });
+        });
+
+        // Close modal when clicking outside the modal content
+        modals.forEach(modal => {
+            modal.addEventListener('click', (event) => {
+                // If the click target is the modal itself (not its content)
+                if (event.target === modal) {
+                    closeModal(modal.id);
+                }
+            });
+        });
+
+        // Close modal when Escape key is pressed
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                modals.forEach(modal => {
+                    if (!modal.classList.contains('hidden')) {
+                        closeModal(modal.id);
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

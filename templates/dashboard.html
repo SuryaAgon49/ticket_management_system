@@ -1,0 +1,640 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - IT Ticketing System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header with Glassmorphism -->
+    <div class="dashboard-header mb-5 py-4 px-4 rounded-4 glass-card" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px);">
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+            <div>
+                <h1 class="display-4 fw-bold mb-2 text-gradient">Welcome, {{ user.name }}!</h1>
+                <p class="lead text-light mb-0">Your comprehensive overview of IT operations</p>
+            </div>
+            <div class="user-info-card p-3 rounded-4 glass-card">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="user-avatar bg-gradient-primary text-white d-flex align-items-center justify-content-center rounded-circle">
+                        {{ user.name[0] }}
+                    </div>
+                    <div>
+                        <h5 class="mb-0 text-light">{{ user.name }}</h5>
+                        <div class="badge bg-primary text-white">{{ user.role }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid with Floating Effect -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 mb-5">
+        <!-- Total Tickets Card -->
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded-3 p-3">
+                            <i class="fas fa-ticket-alt fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-primary mb-1">Total Tickets</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.total_tickets }}</p>
+                            <p class="text-light mb-0 small">All tickets in the system</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Tickets Card -->
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info rounded-3 p-3">
+                            <i class="fas fa-folder-open fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-info mb-1">Open Tickets</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.open_tickets }}</p>
+                            <p class="text-light mb-0 small">Tickets awaiting action</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- In Progress Tickets Card -->
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-warning mb-1">In Progress</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.in_progress_tickets }}</p>
+                            <p class="text-light mb-0 small">Tickets being worked on</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resolved Tickets Card -->
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success rounded-3 p-3">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-success mb-1">Resolved Tickets</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.resolved_tickets }}</p>
+                            <p class="text-light mb-0 small">Tickets that have been resolved</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Cards -->
+        {% if user.role in ['Admin', 'HOD', 'IT Head'] %}
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger rounded-3 p-3">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-danger mb-1">Rejected Tickets</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.rejected_tickets }}</p>
+                            <p class="text-light mb-0 small">Tickets rejected system-wide</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-purple bg-opacity-10 text-purple rounded-3 p-3">
+                            <i class="fas fa-hourglass-half fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-purple mb-1">Pending Approval</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.pending_approval }}</p>
+                            <p class="text-light mb-0 small">Tickets awaiting your approval</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if user.role in ['Admin', 'HOD', 'IT Head'] %}
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-indigo bg-opacity-10 text-indigo rounded-3 p-3">
+                            <i class="fas fa-user-tie fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-indigo mb-1">Pending HOD Approval</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.pending_hod_approval }}</p>
+                            <p class="text-light mb-0 small">Tickets awaiting HOD approval</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="stat-card h-100 rounded-4 glass-card hover-lift">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-teal bg-opacity-10 text-teal rounded-3 p-3">
+                            <i class="fas fa-headset fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-teal mb-1">Pending IT Head Approval</h3>
+                            <p class="stat-value display-4 fw-bold">{{ stats.pending_it_approval }}</p>
+                            <p class="text-light mb-0 small">Tickets awaiting IT Head approval</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Chart and Actions Section -->
+    <div class="row g-4 mb-5">
+        <!-- Chart Section -->
+        <div class="col-lg-7">
+            <div class="card rounded-4 h-100 glass-card">
+                <div class="card-header border-bottom py-3 px-4 glass-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="card-title h5 mb-0 text-light">
+                            <i class="fas fa-chart-pie me-2 text-primary"></i>Ticket Status Distribution
+                        </h2>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="chartFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Last 30 days
+                            </button>
+                            <ul class="dropdown-menu glass-dropdown" aria-labelledby="chartFilterDropdown">
+                                <li><a class="dropdown-item" href="#">Last 7 days</a></li>
+                                <li><a class="dropdown-item" href="#">Last 30 days</a></li>
+                                <li><a class="dropdown-item" href="#">Last 90 days</a></li>
+                                <li><a class="dropdown-item" href="#">All time</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="ticketStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-5">
+            <div class="card rounded-4 h-100 glass-card">
+                <div class="card-header border-bottom py-3 px-4 glass-card">
+                    <h2 class="card-title h5 mb-0 text-light">
+                        <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                    </h2>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-grid gap-3">
+                        {% if user.role == 'User' %}
+                        <a href="{{ url_for('create_ticket') }}" class="btn btn-lg btn-gradient-primary d-flex align-items-center gap-3">
+                            <i class="fas fa-plus-circle fa-lg"></i>
+                            <span>Create New Ticket</span>
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('ticket_list') }}" class="btn btn-lg btn-outline-light d-flex align-items-center gap-3">
+                            <i class="fas fa-list-alt fa-lg"></i>
+                            <span>View All Tickets</span>
+                        </a>
+                        
+                        {% if user.role in ['Admin', 'HOD', 'IT Head'] %}
+                        <a href="{{ url_for('user_list') }}" class="btn btn-lg btn-outline-light d-flex align-items-center gap-3">
+                            <i class="fas fa-users-cog fa-lg"></i>
+                            <span>Manage Users</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if user.role in ['HOD', 'IT Head'] %}
+                        <a href="{{ url_for('ticket_list') }}?status=Pending%20HOD%20Approval" class="btn btn-lg btn-outline-warning d-flex align-items-center gap-3">
+                            <i class="fas fa-user-check fa-lg"></i>
+                            <span>Approve Tickets</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if user.role == 'Technician' %}
+                        <a href="{{ url_for('ticket_list') }}?status=In%20Progress" class="btn btn-lg btn-outline-info d-flex align-items-center gap-3">
+                            <i class="fas fa-tools fa-lg"></i>
+                            <span>My Assigned Tickets</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card rounded-4 mb-4 glass-card">
+        <div class="card-header border-bottom py-3 px-4 glass-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="card-title h5 mb-0 text-light">
+                    <i class="fas fa-stream me-2 text-info"></i>Recent Activity Feed
+                </h2>
+                <a href="{{ url_for('notifications_page') }}" class="btn btn-sm btn-outline-light rounded-pill">
+                    View All Activities <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="activity-feed">
+                {% if tickets or notifications %}
+                    {% set all_activities = [] %}
+                    {% for ticket in tickets %}
+                        {% set activity_type = 'ticket' %}
+                        {% set activity_message = ticket.title %}
+                        {% set activity_timestamp = ticket.updated_at %}
+                        {% set activity_link = url_for('ticket_detail', ticket_id=ticket.id) %}
+                        {% set activity_status = ticket.status %}
+                        {% set all_activities = all_activities + [{'type': activity_type, 'message': activity_message, 'timestamp': activity_timestamp, 'link': activity_link, 'status': activity_status}] %}
+                    {% endfor %}
+                    {% for notification in notifications %}
+                        {% set activity_type = 'notification' %}
+                        {% set activity_message = notification.message %}
+                        {% set activity_timestamp = notification.timestamp %}
+                        {% set notification_id = notification.id %}
+                        {% set activity_link = url_for('ticket_detail', ticket_id=notification.ticket_id) if notification.ticket_id else url_for('notifications_page') %}
+                        {% set activity_read = notification.read %}
+                        {% set all_activities = all_activities + [{'type': activity_type, 'message': activity_message, 'timestamp': activity_timestamp, 'link': activity_link, 'read': activity_read, 'id': notification_id}] %}
+                    {% endfor %}
+
+                    {% set sorted_activities = all_activities | sort(attribute='timestamp', reverse=true) %}
+
+                    {% for activity in sorted_activities[:5] %}
+                    <div class="activity-item d-flex align-items-center p-4 border-bottom border-light border-opacity-10">
+                        <div class="flex-shrink-0 me-3">
+                            {% if activity.type == 'ticket' %}
+                                <div class="activity-icon bg-primary bg-opacity-10 text-primary rounded-circle p-3">
+                                    <i class="fas fa-ticket-alt"></i>
+                                </div>
+                            {% elif activity.type == 'notification' %}
+                                <div class="activity-icon bg-info bg-opacity-10 {% if not activity.read %}text-info{% else %}text-secondary{% endif %} rounded-circle p-3">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-1 text-light">
+                                    {% if activity.type == 'ticket' %}
+                                        <a href="{{ activity.link }}" class="text-decoration-none text-light">{{ activity.message }}</a>
+                                    {% elif activity.type == 'notification' %}
+                                        <span class="{% if not activity.read %}fw-bold{% endif %}">{{ activity.message }}</span>
+                                    {% endif %}
+                                </h5>
+                                <small class="text-light text-opacity-75">{{ activity.timestamp | time_ago }}</small>
+                            </div>
+                            
+                            <div class="d-flex align-items-center mt-2">
+                                {% if activity.type == 'ticket' %}
+                                    <span class="badge 
+                                        {% if activity.status == 'Open' %}bg-primary
+                                        {% elif activity.status == 'In Progress' %}bg-warning
+                                        {% elif activity.status == 'Resolved' %}bg-success
+                                        {% elif activity.status == 'Closed' %}bg-secondary
+                                        {% elif 'Approval' in activity.status %}bg-purple
+                                        {% elif activity.status == 'Approved' %}bg-indigo
+                                        {% elif activity.status == 'Rejected' %}bg-danger
+                                        {% else %}bg-light text-dark{% endif %} me-2">
+                                        {{ activity.status }}
+                                    </span>
+                                {% endif %}
+                                
+                                {% if activity.type == 'notification' and not activity.read %}
+                                    <span class="badge bg-info me-2">New</span>
+                                {% endif %}
+                                
+                                {% if activity.type == 'notification' and not activity.read %}
+                                    <a href="{{ url_for('mark_notification_read', notification_id=activity.id) }}"
+                                       class="btn btn-sm btn-outline-light ms-auto">Mark as Read</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="text-center p-5">
+                    <div class="mb-3">
+                        <i class="fas fa-inbox fa-3x text-light text-opacity-50"></i>
+                    </div>
+                    <h5 class="text-light text-opacity-75">No recent activities</h5>
+                    <p class="text-light text-opacity-50 mb-0">Your activity feed will appear here</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Glassmorphism Effect */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+        transition: all 0.4s ease;
+    }
+    
+    .glass-dropdown {
+        background: rgba(40, 40, 60, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .glass-dropdown .dropdown-item {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .glass-dropdown .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    /* Gradient Effects */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    }
+    
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #3a0ca3, #4361ee);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
+    }
+    
+    .text-gradient {
+        background: linear-gradient(90deg, #4361ee, #4cc9f0);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    
+    /* Hover Effects */
+    .hover-lift:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Dashboard Header */
+    .dashboard-header {
+        padding-top: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, transparent 70%);
+        z-index: -1;
+    }
+    
+    /* Stat Cards */
+    .stat-card {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .stat-icon {
+        transition: transform 0.4s ease;
+    }
+    
+    .stat-card:hover .stat-icon {
+        transform: scale(1.15) rotate(5deg);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        line-height: 1;
+        margin: 0.5rem 0;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Activity Feed */
+    .activity-item {
+        transition: background-color 0.3s ease;
+    }
+    
+    .activity-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .activity-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .activity-item:hover .activity-icon {
+        transform: scale(1.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Custom Colors */
+    .border-purple { border-color: #6f42c1 !important; }
+    .text-purple { color: #6f42c1 !important; }
+    .bg-purple { background-color: #6f42c1 !important; }
+    
+    .border-indigo { border-color: #6610f2 !important; }
+    .text-indigo { color: #6610f2 !important; }
+    .bg-indigo { background-color: #6610f2 !important; }
+    
+    .border-teal { border-color: #20c997 !important; }
+    .text-teal { color: #20c997 !important; }
+    .bg-teal { background-color: #20c997 !important; }
+    
+    /* Typography */
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+        color: rgba(255, 255, 255, 0.85);
+    }
+    
+    .text-light {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+    
+    .text-muted {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+    
+    /* Card Styling */
+    .card {
+        border: none;
+        overflow: hidden;
+    }
+    
+    .rounded-4 {
+        border-radius: 1.5rem !important;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-card {
+        animation: fadeIn 0.6s ease forwards;
+    }
+    
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        z-index: 10;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart data
+        const stats = {
+            open_tickets: {{ stats.open_tickets }},
+            in_progress_tickets: {{ stats.in_progress_tickets }},
+            resolved_tickets: {{ stats.resolved_tickets }},
+            closed_tickets: {{ stats.closed_tickets }},
+            pending_approval: {{ stats.pending_approval }}
+        };
+
+        // Create gradient for chart
+        const createGradient = (ctx, color1, color2) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            return gradient;
+        };
+
+        const ctx = document.getElementById('ticketStatusChart').getContext('2d');
+        const ticketStatusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Open', 'In Progress', 'Resolved', 'Closed', 'Pending Approval'],
+                datasets: [{
+                    data: [
+                        stats.open_tickets,
+                        stats.in_progress_tickets,
+                        stats.resolved_tickets,
+                        stats.closed_tickets,
+                        stats.pending_approval
+                    ],
+                    backgroundColor: [
+                        createGradient(ctx, 'rgba(67, 97, 238, 0.8)', 'rgba(67, 97, 238, 0.4)'),
+                        createGradient(ctx, 'rgba(245, 158, 11, 0.8)', 'rgba(245, 158, 11, 0.4)'),
+                        createGradient(ctx, 'rgba(16, 185, 129, 0.8)', 'rgba(16, 185, 129, 0.4)'),
+                        createGradient(ctx, 'rgba(107, 114, 128, 0.8)', 'rgba(107, 114, 128, 0.4)'),
+                        createGradient(ctx, 'rgba(111, 66, 193, 0.8)', 'rgba(111, 66, 193, 0.4)')
+                    ],
+                    borderColor: [
+                        'rgba(255, 255, 255, 0.5)',
+                        'rgba(255, 255, 255, 0.5)',
+                        'rgba(255, 255, 255, 0.5)',
+                        'rgba(255, 255, 255, 0.5)',
+                        'rgba(255, 255, 255, 0.5)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: {
+                                size: 12
+                            },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 30, 50, 0.9)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed}`;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%',
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 1200
+                }
+            }
+        });
+        
+        // Add animations to elements
+        const statCards = document.querySelectorAll('.stat-card');
+        statCards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('animate-card');
+        });
+        
+        // Add animation to the chart container
+        const chartContainer = document.querySelector('.chart-container');
+        chartContainer.style.animationDelay = "0.4s";
+        chartContainer.classList.add('animate-card');
+        
+        // Add hover effect to quick action buttons
+        const actionButtons = document.querySelectorAll('.btn');
+        actionButtons.forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+                this.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.2)';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+                this.style.boxShadow = '';
+            });
+        });
+    });
+</script>
+{% endblock %}

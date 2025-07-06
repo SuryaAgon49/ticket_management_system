@@ -1,0 +1,906 @@
+{% extends "base.html" %}
+
+{% block title %}Tickets - IT Ticketing System{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Page Header -->
+    <div class="page-header mb-4" data-aos="fade-down">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+            <div>
+                <h1 class="page-title mb-2">
+                    <i class="fas fa-ticket-alt me-3 text-primary"></i>
+                    Your Tickets
+                </h1>
+                <p class="page-subtitle mb-0">Manage and track all your IT support requests</p>
+            </div>
+            {% if user.role == 'User' %}
+            <div class="header-actions">
+                <a href="{{ url_for('create_ticket') }}" class="btn btn-primary btn-lg btn-create-ticket">
+                    <i class="fas fa-plus me-2"></i>
+                    <span>Create New Ticket</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-overview row g-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ tickets|length }}</h3>
+                    <p class="stat-label">Total Tickets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card-warning">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ tickets|selectattr('status', 'equalto', 'Open')|list|length }}</h3>
+                    <p class="stat-label">Open</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card-info">
+                <div class="stat-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ tickets|selectattr('status', 'equalto', 'In Progress')|list|length }}</h3>
+                    <p class="stat-label">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ tickets|selectattr('status', 'equalto', 'Resolved')|list|length }}</h3>
+                    <p class="stat-label">Resolved</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tickets Table Card -->
+    <div class="tickets-card" data-aos="fade-up" data-aos-delay="200">
+        <!-- Filter Header -->
+        <div class="tickets-header">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="header-title">
+                    <h2 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        Filter & Search
+                    </h2>
+                </div>
+                <div class="filter-controls">
+                    <form method="GET" action="{{ url_for('ticket_list') }}" class="filter-form">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" name="search" placeholder="Search tickets..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <select class="form-select" name="status" onchange="this.form.submit()">
+                            <option value="All" {% if not current_filter %}selected{% endif %}>All Statuses</option>
+                            {% for status in statuses %}
+                                <option value="{{ status }}" {% if current_filter == status %}selected{% endif %}>{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tickets Content -->
+        <div class="tickets-content">
+            {% if tickets %}
+                <!-- Desktop Table View -->
+                <div class="d-none d-lg-block">
+                    <div class="table-container">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="id">
+                                        <span>Ticket ID</span>
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="title">
+                                        <span>Title</span>
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="category">
+                                        <span>Category</span>
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="priority">
+                                        <span>Priority</span>
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="status">
+                                        <span>Status</span>
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th>Created By</th>
+                                    <th>Assigned To</th>
+                                    <th class="sortable" data-sort="updated">
+                                        <span>Last Updated</span>
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in tickets %}
+                                <tr class="ticket-row" data-ticket-id="{{ ticket.id }}">
+                                    <td class="ticket-id">
+                                        <span class="id-badge">{{ ticket.id[:8] }}...</span>
+                                    </td>
+                                    <td class="ticket-title">
+                                        <div class="title-content">
+                                            <span class="title-text">{{ ticket.title }}</span>
+                                            {% if ticket.description %}
+                                            <small class="title-description">{{ ticket.description[:60] }}{% if ticket.description|length > 60 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="ticket-category">
+                                        <span class="category-badge">{{ ticket.category }}</span>
+                                    </td>
+                                    <td class="ticket-priority">
+                                        <span class="priority-badge priority-{{ ticket.priority.lower() }}">
+                                            {% if ticket.priority == 'Critical' %}
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                            {% elif ticket.priority == 'High' %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                            {% elif ticket.priority == 'Medium' %}
+                                                <i class="fas fa-minus-circle me-1"></i>
+                                            {% else %}
+                                                <i class="fas fa-circle me-1"></i>
+                                            {% endif %}
+                                            {{ ticket.priority }}
+                                        </span>
+                                    </td>
+                                    <td class="ticket-status">
+                                        <span class="status-badge status-{{ ticket.status.lower().replace(' ', '-') }}">
+                                            {% if ticket.status == 'Open' %}
+                                                <i class="fas fa-door-open me-1"></i>
+                                            {% elif ticket.status == 'In Progress' %}
+                                                <i class="fas fa-spinner me-1"></i>
+                                            {% elif ticket.status == 'Resolved' %}
+                                                <i class="fas fa-check-circle me-1"></i>
+                                            {% elif ticket.status == 'Closed' %}
+                                                <i class="fas fa-times-circle me-1"></i>
+                                            {% elif 'Approval' in ticket.status %}
+                                                <i class="fas fa-clock me-1"></i>
+                                            {% elif ticket.status == 'Approved' %}
+                                                <i class="fas fa-thumbs-up me-1"></i>
+                                            {% elif ticket.status == 'Rejected' %}
+                                                <i class="fas fa-thumbs-down me-1"></i>
+                                            {% endif %}
+                                            {{ ticket.status }}
+                                        </span>
+                                    </td>
+                                    <td class="ticket-user">
+                                        <div class="user-info">
+                                            <div class="user-avatar">{{ ticket.created_by_name[0]|upper }}</div>
+                                            <span class="user-name">{{ ticket.created_by_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="ticket-assigned">
+                                        {% if ticket.assigned_to_name %}
+                                            <div class="user-info">
+                                                <div class="user-avatar user-avatar-assigned">{{ ticket.assigned_to_name[0]|upper }}</div>
+                                                <span class="user-name">{{ ticket.assigned_to_name }}</span>
+                                            </div>
+                                        {% else %}
+                                            <span class="unassigned-text">
+                                                <i class="fas fa-user-slash me-1"></i>
+                                                Unassigned
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="ticket-updated">
+                                        <span class="updated-time">{{ ticket.updated_at | time_ago }}</span>
+                                    </td>
+                                    <td class="ticket-actions">
+                                        <div class="action-buttons">
+                                            <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="btn btn-action btn-view" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button class="btn btn-action btn-more" data-bs-toggle="dropdown" title="More Actions">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}">
+                                                    <i class="fas fa-eye me-2"></i>View Details
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="#">
+                                                    <i class="fas fa-edit me-2"></i>Edit
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#">
+                                                    <i class="fas fa-trash me-2"></i>Delete
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="d-lg-none">
+                    <div class="mobile-tickets">
+                        {% for ticket in tickets %}
+                        <div class="mobile-ticket-card" data-ticket-id="{{ ticket.id }}">
+                            <div class="mobile-ticket-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="ticket-info">
+                                        <h6 class="ticket-title-mobile">{{ ticket.title }}</h6>
+                                        <span class="ticket-id-mobile">{{ ticket.id[:8] }}...</span>
+                                    </div>
+                                    <div class="ticket-status-mobile">
+                                        <span class="status-badge status-{{ ticket.status.lower().replace(' ', '-') }}">
+                                            {{ ticket.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mobile-ticket-body">
+                                <div class="ticket-meta">
+                                    <div class="meta-item">
+                                        <i class="fas fa-tag me-2"></i>
+                                        <span>{{ ticket.category }}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="priority-badge priority-{{ ticket.priority.lower() }}">
+                                            {{ ticket.priority }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="ticket-users">
+                                    <div class="user-item">
+                                        <small class="text-muted">Created by:</small>
+                                        <span>{{ ticket.created_by_name }}</span>
+                                    </div>
+                                    {% if ticket.assigned_to_name %}
+                                    <div class="user-item">
+                                        <small class="text-muted">Assigned to:</small>
+                                        <span>{{ ticket.assigned_to_name }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="ticket-time">
+                                    <small class="text-muted">Updated {{ ticket.updated_at | time_ago }}</small>
+                                </div>
+                            </div>
+                            <div class="mobile-ticket-actions">
+                                <a href="{{ url_for('ticket_detail', ticket_id=ticket.id) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3 class="empty-title">No tickets found</h3>
+                    <p class="empty-description">
+                        {% if current_filter %}
+                            No tickets match your current filter criteria.
+                        {% else %}
+                            You haven't created any tickets yet.
+                        {% endif %}
+                    </p>
+                    {% if user.role == 'User' %}
+                    <div class="empty-actions">
+                        <a href="{{ url_for('create_ticket') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Your First Ticket
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page Header */
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: var(--light-text-muted);
+    font-weight: 500;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-create-ticket {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    transition: var(--transition-normal);
+}
+
+.btn-create-ticket:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Stats Overview */
+.stats-overview {
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-normal);
+    border: 1px solid var(--light-bg-3);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-card-primary::before { background: var(--accent-primary); }
+.stat-card-warning::before { background: var(--accent-tertiary); }
+.stat-card-info::before { background: var(--accent-primary); }
+.stat-card-success::before { background: var(--accent-secondary); }
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+}
+
+.stat-card-warning .stat-icon {
+    background: linear-gradient(135deg, var(--accent-tertiary), #d97706);
+}
+
+.stat-card-success .stat-icon {
+    background: linear-gradient(135deg, var(--accent-secondary), #059669);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--light-text-muted);
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+/* Tickets Card */
+.tickets-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border: 1px solid var(--light-bg-3);
+}
+
+.tickets-header {
+    background: linear-gradient(135deg, var(--light-bg), white);
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--light-bg-3);
+}
+
+.header-title h2 {
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-form {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-form .input-group {
+    min-width: 250px;
+}
+
+.filter-form .form-select {
+    min-width: 150px;
+}
+
+.input-group-text {
+    background-color: var(--light-bg-2);
+    border-color: var(--light-bg-3);
+    color: var(--light-text-muted);
+}
+
+/* Desktop Table */
+.table-container {
+    overflow-x: auto;
+}
+
+.tickets-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+}
+
+.tickets-table thead th {
+    background: linear-gradient(135deg, var(--light-bg-2), var(--light-bg));
+    padding: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: var(--primary-dark);
+    border-bottom: 2px solid var(--light-bg-3);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tickets-table thead th.sortable {
+    cursor: pointer;
+    transition: var(--transition-fast);
+    user-select: none;
+}
+
+.tickets-table thead th.sortable:hover {
+    background: linear-gradient(135deg, var(--light-bg-3), var(--light-bg-2));
+}
+
+.tickets-table thead th.sortable span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sort-icon {
+    opacity: 0.5;
+    transition: var(--transition-fast);
+}
+
+.tickets-table thead th.sortable:hover .sort-icon {
+    opacity: 1;
+}
+
+.tickets-table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--light-bg-3);
+    color: var(--light-text);
+}
+
+.ticket-row {
+    transition: var(--transition-fast);
+    cursor: pointer;
+}
+
+.ticket-row:hover {
+    background-color: var(--light-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ticket-row:last-child td {
+    border-bottom: none;
+}
+
+/* Table Cell Styles */
+.id-badge {
+    background: var(--light-bg-2);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--light-text-muted);
+}
+
+.title-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.title-text {
+    font-weight: 600;
+    color: var(--primary-dark);
+    font-size: 1rem;
+}
+
+.title-description {
+    color: var(--light-text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.category-badge {
+    background: linear-gradient(135deg, var(--light-bg-2), var(--light-bg-3));
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--primary-dark);
+}
+
+.priority-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.priority-critical {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+}
+
+.priority-high {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.priority-medium {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.priority-low {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.status-open {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.status-in-progress {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.status-resolved {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.status-closed {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+}
+
+.status-pending-approval {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.status-approved {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+}
+
+.status-rejected {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.user-avatar-assigned {
+    background: linear-gradient(135deg, var(--accent-tertiary), #d97706);
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--primary-dark);
+    font-size: 0.9rem;
+}
+
+.unassigned-text {
+    color: var(--light-text-muted);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.updated-time {
+    color: var(--light-text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-action {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: var(--transition-fast);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-view {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+    color: white;
+}
+
+.btn-view:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-more {
+    background: var(--light-bg-2);
+    color: var(--light-text-muted);
+}
+
+.btn-more:hover {
+    background: var(--light-bg-3);
+    color: var(--primary-dark);
+}
+
+/* Mobile Cards */
+.mobile-tickets {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.mobile-ticket-card {
+    background: white;
+    border: 1px solid var(--light-bg-3);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    transition: var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.mobile-ticket-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.mobile-ticket-header {
+    margin-bottom: 1rem;
+}
+
+.ticket-title-mobile {
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+}
+
+.ticket-id-mobile {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--light-text-muted);
+    background: var(--light-bg-2);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.ticket-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--light-text-muted);
+    font-size: 0.9rem;
+}
+
+.ticket-users {
+    margin-bottom: 1rem;
+}
+
+.user-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.user-item:last-child {
+    margin-bottom: 0;
+}
+
+.mobile-ticket-actions {
+    padding-top: 1rem;
+    border-top: 1px solid var(--light-bg-3);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--light-text-muted);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: var(--light-bg-3);
+}
+
+.empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 1rem;
+}
+
+.empty-description {
+    font-size: 1rem;
+    color: var(--light-text-muted);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.empty-actions .btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    transition: var(--transition-normal);
+}
+
+.empty-actions .btn-primary {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+    border: none;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.empty-actions .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Responsive adjustments for empty state */
+@media (max-width: 768px) {
+    .empty-state {
+        padding: 3rem 1rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+    }
+    
+    .empty-title {
+        font-size: 1.3rem;
+    }
+    
+    .empty-description {
+        font-size: 0.9rem;
+    }
+}
+</style>
+{% endblock %}

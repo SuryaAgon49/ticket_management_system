@@ -1,0 +1,723 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - IT Ticketing System{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1 text-dark fw-bold">User Management</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Users</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" id="refreshBtn" data-bs-toggle="tooltip" title="Refresh Data">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="exportBtn" data-bs-toggle="tooltip" title="Export to CSV">
+                <i class="fas fa-download"></i>
+            </button>
+            <a href="{{ url_for('create_user') }}" class="btn btn-primary btn-sm shadow-sm">
+                <i class="fas fa-plus me-2"></i>Create New User
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 small">Total Users</h6>
+                        <h4 class="mb-0 fw-bold" id="totalUsers">{{ users|length if users else 0 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="icon-circle bg-success bg-opacity-10 text-success">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 small">Admins</h6>
+                        <h4 class="mb-0 fw-bold" id="adminCount">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="icon-circle bg-warning bg-opacity-10 text-warning">
+                            <i class="fas fa-user-cog"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 small">IT Staff</h6>
+                        <h4 class="mb-0 fw-bold" id="itStaffCount">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100 stats-card">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="icon-circle bg-info bg-opacity-10 text-info">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 small">Regular Users</h6>
+                        <h4 class="mb-0 fw-bold" id="regularUserCount">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Panel -->
+    <div class="card border-0 shadow-sm mb-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="Search users..." id="searchInput">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="roleFilter">
+                        <option value="">All Roles</option>
+                        <option value="Admin">Admin</option>
+                        <option value="IT Head">IT Head</option>
+                        <option value="HOD">HOD</option>
+                        <option value="User">User</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortBy">
+                        <option value="name">Sort by Name</option>
+                        <option value="username">Sort by Username</option>
+                        <option value="role">Sort by Role</option>
+                        <option value="email">Sort by Email</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" id="clearFilters">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card border-0 shadow-sm" data-aos="fade-up" data-aos-delay="300">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="fas fa-users me-2 text-primary"></i>User Directory
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark" id="filteredCount">{{ users|length if users else 0 }} users</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="tableView">
+                            <i class="fas fa-table"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="cardView">
+                            <i class="fas fa-th"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if users %}
+                <!-- Table View -->
+                <div id="tableViewContainer">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="usersTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable" data-sort="username">
+                                        <div class="d-flex align-items-center">
+                                            Username
+                                            <i class="fas fa-sort ms-1 text-muted"></i>
+                                        </div>
+                                    </th>
+                                    <th class="sortable" data-sort="name">
+                                        <div class="d-flex align-items-center">
+                                            Name
+                                            <i class="fas fa-sort ms-1 text-muted"></i>
+                                        </div>
+                                    </th>
+                                    <th class="sortable" data-sort="role">
+                                        <div class="d-flex align-items-center">
+                                            Role
+                                            <i class="fas fa-sort ms-1 text-muted"></i>
+                                        </div>
+                                    </th>
+                                    <th class="sortable" data-sort="email">
+                                        <div class="d-flex align-items-center">
+                                            Email
+                                            <i class="fas fa-sort ms-1 text-muted"></i>
+                                        </div>
+                                    </th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                {% for user_item in users %}
+                                <tr class="user-row" data-user-id="{{ user_item.id }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar-sm me-2">
+                                                {{ user_item.name[0]|upper }}
+                                            </div>
+                                            <span class="fw-medium">{{ user_item.username }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-medium">{{ user_item.name }}</div>
+                                            <small class="text-muted">{{ user_item.department if user_item.department else 'No Department' }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge role-badge role-{{ user_item.role|lower|replace(' ', '-') }}">
+                                            {{ user_item.role }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span>{{ user_item.email if user_item.email else 'N/A' }}</span>
+                                            {% if user_item.email %}
+                                            <i class="fas fa-envelope ms-1 text-muted" data-bs-toggle="tooltip" title="Email verified"></i>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success">Active</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>View</a></li>
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Card View -->
+                <div id="cardViewContainer" class="d-none">
+                    <div class="row g-3 p-3" id="userCardsContainer">
+                        {% for user_item in users %}
+                        <div class="col-lg-4 col-md-6 user-card-item" data-user-id="{{ user_item.id }}">
+                            <div class="card h-100 border-0 shadow-sm user-card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="user-avatar-lg me-3">
+                                            {{ user_item.name[0]|upper }}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 fw-bold">{{ user_item.name }}</h6>
+                                            <p class="text-muted mb-0 small">@{{ user_item.username }}</p>
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-eye me-2"></i>View</a></li>
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge role-badge role-{{ user_item.role|lower|replace(' ', '-') }} mb-2">
+                                            {{ user_item.role }}
+                                        </span>
+                                        <span class="badge bg-success-subtle text-success">Active</span>
+                                    </div>
+                                    <div class="small text-muted">
+                                        <div class="mb-1">
+                                            <i class="fas fa-envelope me-2"></i>
+                                            {{ user_item.email if user_item.email else 'No email' }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-building me-2"></i>
+                                            {{ user_item.department if user_item.department else 'No Department' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No users found</h5>
+                        <p class="text-muted">Create a new user to populate the directory.</p>
+                        <a href="{{ url_for('create_user') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create First User
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center mt-4" id="paginationContainer">
+        <div class="text-muted small">
+            Showing <span id="showingStart">1</span> to <span id="showingEnd">{{ users|length if users else 0 }}</span> of <span id="totalRecords">{{ users|length if users else 0 }}</span> users
+        </div>
+        <nav>
+            <ul class="pagination mb-0" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+<style>
+    .stats-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .user-avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .user-avatar-lg {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1.125rem;
+    }
+    
+    .role-badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.75em;
+        border-radius: 50px;
+        font-weight: 500;
+    }
+    
+    .role-admin {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .role-it-head {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .role-hod {
+        background-color: #f3e8ff;
+        color: #7c3aed;
+    }
+    
+    .role-user {
+        background-color: #ecfdf5;
+        color: #065f46;
+    }
+    
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .sortable:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .sortable.asc .fa-sort:before {
+        content: "\f0de";
+    }
+    
+    .sortable.desc .fa-sort:before {
+        content: "\f0dd";
+    }
+    
+    .user-row {
+        transition: all 0.2s ease;
+    }
+    
+    .user-row:hover {
+        background-color: #f8f9fa;
+        transform: translateX(2px);
+    }
+    
+    .user-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .user-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+        border-left-color: #3b82f6;
+    }
+    
+    .empty-state {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .search-highlight {
+        background-color: yellow;
+        padding: 1px 2px;
+        border-radius: 2px;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Global variables
+    let currentPage = 1;
+    let usersPerPage = 10;
+    let allUsers = [];
+    let filteredUsers = [];
+    let currentSort = { field: 'name', direction: 'asc' };
+    
+    // Initialize users data
+    const userRows = document.querySelectorAll('.user-row');
+    userRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        allUsers.push({
+            id: row.dataset.userId,
+            username: cells[0].textContent.trim(),
+            name: cells[1].textContent.trim(),
+            role: cells[2].textContent.trim(),
+            email: cells[3].textContent.trim(),
+            element: row
+        });
+    });
+    
+    filteredUsers = [...allUsers];
+    
+    // Update stats
+    updateStats();
+    
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const roleFilter = document.getElementById('roleFilter');
+    const sortBy = document.getElementById('sortBy');
+    
+    searchInput.addEventListener('input', debounce(performSearch, 300));
+    roleFilter.addEventListener('change', performSearch);
+    sortBy.addEventListener('change', handleSort);
+    
+    // View toggle
+    const tableView = document.getElementById('tableView');
+    const cardView = document.getElementById('cardView');
+    const tableContainer = document.getElementById('tableViewContainer');
+    const cardContainer = document.getElementById('cardViewContainer');
+    
+    tableView.addEventListener('click', () => switchView('table'));
+    cardView.addEventListener('click', () => switchView('card'));
+    
+    // Clear filters
+    document.getElementById('clearFilters').addEventListener('click', clearFilters);
+    
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', refreshData);
+    
+    // Export button
+    document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+    
+    // Sortable table headers
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', () => {
+            const sortField = header.dataset.sort;
+            handleTableSort(sortField);
+        });
+    });
+    
+    function updateStats() {
+        const adminCount = allUsers.filter(user => user.role === 'Admin').length;
+        const itStaffCount = allUsers.filter(user => user.role === 'IT Head').length;
+        const regularUserCount = allUsers.filter(user => user.role === 'User').length;
+        
+        document.getElementById('adminCount').textContent = adminCount;
+        document.getElementById('itStaffCount').textContent = itStaffCount;
+        document.getElementById('regularUserCount').textContent = regularUserCount;
+    }
+    
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedRole = roleFilter.value;
+        
+        filteredUsers = allUsers.filter(user => {
+            const matchesSearch = !searchTerm || 
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.name.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm);
+            
+            const matchesRole = !selectedRole || user.role === selectedRole;
+            
+            return matchesSearch && matchesRole;
+        });
+        
+        highlightSearchTerm(searchTerm);
+        updateDisplay();
+    }
+    
+    function highlightSearchTerm(term) {
+        if (!term) return;
+        
+        filteredUsers.forEach(user => {
+            const element = user.element;
+            const cells = element.querySelectorAll('td');
+            
+            cells.forEach(cell => {
+                let html = cell.innerHTML;
+                if (html.includes(term)) {
+                    const regex = new RegExp(`(${term})`, 'gi');
+                    html = html.replace(regex, '<span class="search-highlight">$1</span>');
+                    cell.innerHTML = html;
+                }
+            });
+        });
+    }
+    
+    function handleSort() {
+        const sortField = sortBy.value;
+        sortUsers(sortField);
+        updateDisplay();
+    }
+    
+    function handleTableSort(field) {
+        const header = document.querySelector(`[data-sort="${field}"]`);
+        const isAsc = header.classList.contains('asc');
+        
+        // Remove all sort classes
+        document.querySelectorAll('.sortable').forEach(h => {
+            h.classList.remove('asc', 'desc');
+        });
+        
+        // Add appropriate class
+        header.classList.add(isAsc ? 'desc' : 'asc');
+        
+        const direction = isAsc ? 'desc' : 'asc';
+        currentSort = { field, direction };
+        
+        sortUsers(field, direction);
+        updateDisplay();
+    }
+    
+    function sortUsers(field, direction = 'asc') {
+        filteredUsers.sort((a, b) => {
+            let aVal = a[field].toLowerCase();
+            let bVal = b[field].toLowerCase();
+            
+            if (direction === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+    }
+    
+    function updateDisplay() {
+        const filteredCount = document.getElementById('filteredCount');
+        filteredCount.textContent = `${filteredUsers.length} users`;
+        
+        // Hide all rows first
+        allUsers.forEach(user => {
+            user.element.style.display = 'none';
+        });
+        
+        // Show filtered rows
+        filteredUsers.forEach(user => {
+            user.element.style.display = '';
+            user.element.classList.add('fade-in');
+        });
+        
+        // Update pagination
+        updatePagination();
+    }
+    
+    function switchView(view) {
+        if (view === 'table') {
+            tableView.classList.add('active');
+            cardView.classList.remove('active');
+            tableContainer.classList.remove('d-none');
+            cardContainer.classList.add('d-none');
+        } else {
+            cardView.classList.add('active');
+            tableView.classList.remove('active');
+            tableContainer.classList.add('d-none');
+            cardContainer.classList.remove('d-none');
+        }
+        
+        localStorage.setItem('userListView', view);
+    }
+    
+    function clearFilters() {
+        searchInput.value = '';
+        roleFilter.value = '';
+        sortBy.value = 'name';
+        
+        // Remove search highlights
+        document.querySelectorAll('.search-highlight').forEach(el => {
+            el.outerHTML = el.innerHTML;
+        });
+        
+        filteredUsers = [...allUsers];
+        updateDisplay();
+    }
+    
+    function refreshData() {
+        const btn = document.getElementById('refreshBtn');
+        const icon = btn.querySelector('i');
+        
+        icon.classList.add('fa-spin');
+        
+        setTimeout(() => {
+            icon.classList.remove('fa-spin');
+            // In a real app, this would reload the data
+            console.log('Data refreshed');
+        }, 1000);
+    }
+    
+    function exportToCSV() {
+        const csvData = [
+            ['Username', 'Name', 'Role', 'Email'],
+            ...filteredUsers.map(user => [
+                user.username,
+                user.name,
+                user.role,
+                user.email
+            ])
+        ];
+        
+        const csvContent = csvData.map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+    }
+    
+    function updatePagination() {
+        const total = filteredUsers.length;
+        const totalPages = Math.ceil(total / usersPerPage);
+        
+        document.getElementById('showingStart').textContent = total > 0 ? 1 : 0;
+        document.getElementById('showingEnd').textContent = Math.min(total, usersPerPage);
+        document.getElementById('totalRecords').textContent = total;
+        
+        // Simple pagination - could be enhanced
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+        
+        for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+            pagination.appendChild(li);
+        }
+    }
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Load saved view preference
+    const savedView = localStorage.getItem('userListView');
+    if (savedView) {
+        switchView(savedView);
+    }
+    
+    // Initialize display
+    updateDisplay();
+});
+</script>
+{% endblock %}

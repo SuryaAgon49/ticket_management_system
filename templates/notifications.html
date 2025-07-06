@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - IT Ticketing System{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 fw-bold text-dark mb-1">
+                        <i class="fas fa-bell text-primary me-2"></i>
+                        Notifications
+                    </h1>
+                    <p class="text-muted mb-0">Stay updated with your latest activities and ticket updates</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="markAllAsRead()">
+                        <i class="fas fa-check-double me-2"></i>Mark All Read
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="refreshNotifications()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="text-muted fw-medium me-3">Filter by:</span>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="notificationFilter" id="all" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="all">All</label>
+                            
+                            <input type="radio" class="btn-check" name="notificationFilter" id="unread" autocomplete="off">
+                            <label class="btn btn-outline-primary btn-sm" for="unread">Unread</label>
+                            
+                            <input type="radio" class="btn-check" name="notificationFilter" id="read" autocomplete="off">
+                            <label class="btn btn-outline-primary btn-sm" for="read">Read</label>
+                        </div>
+                        <div class="ms-auto">
+                            <small class="text-muted">
+                                <span id="notification-count">{{ notifications|length if notifications else 0 }}</span> notifications
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="row">
+        <div class="col-12">
+            {% if notifications %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="notification-list">
+                            {% for notification in notifications %}
+                            <div class="notification-item {% if not notification.read %}unread{% endif %}" 
+                                 data-notification-id="{{ notification.id }}"
+                                 data-aos="fade-up" 
+                                 data-aos-delay="{{ loop.index0 * 50 }}">
+                                
+                                <div class="notification-content">
+                                    <!-- Notification Icon -->
+                                    <div class="notification-icon">
+                                        {% if notification.type == 'ticket_created' %}
+                                            <i class="fas fa-plus-circle text-success"></i>
+                                        {% elif notification.type == 'ticket_updated' %}
+                                            <i class="fas fa-edit text-warning"></i>
+                                        {% elif notification.type == 'ticket_resolved' %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% elif notification.type == 'ticket_assigned' %}
+                                            <i class="fas fa-user-tag text-info"></i>
+                                        {% elif notification.type == 'system' %}
+                                            <i class="fas fa-cog text-secondary"></i>
+                                        {% else %}
+                                            <i class="fas fa-bell text-primary"></i>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Notification Details -->
+                                    <div class="notification-details">
+                                        <div class="notification-header">
+                                            <h6 class="notification-title mb-1">
+                                                {{ notification.message }}
+                                            </h6>
+                                            <div class="notification-meta">
+                                                <span class="notification-time">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    {{ notification.timestamp.strftime('%b %d, %Y at %I:%M %p') }}
+                                                </span>
+                                                {% if notification.ticket_id %}
+                                                <span class="notification-ticket">
+                                                    <i class="fas fa-ticket-alt me-1"></i>
+                                                    <a href="{{ url_for('ticket_detail', ticket_id=notification.ticket_id) }}" 
+                                                       class="text-primary text-decoration-none">
+                                                        Ticket #{{ notification.ticket_id }}
+                                                    </a>
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Notification Body -->
+                                        {% if notification.description %}
+                                        <div class="notification-body">
+                                            <p class="text-muted mb-0">{{ notification.description }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Notification Actions -->
+                                    <div class="notification-actions">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <!-- Read Status Badge -->
+                                            {% if not notification.read %}
+                                            <span class="badge bg-primary">New</span>
+                                            {% endif %}
+                                            
+                                            <!-- Priority Badge -->
+                                            {% if notification.priority == 'high' %}
+                                            <span class="badge bg-danger">High Priority</span>
+                                            {% elif notification.priority == 'medium' %}
+                                            <span class="badge bg-warning">Medium Priority</span>
+                                            {% endif %}
+                                            
+                                            <!-- Actions Dropdown -->
+                                            <div class="dropdown">
+                                                <button class="btn btn-link btn-sm text-muted p-1" 
+                                                        type="button" 
+                                                        data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    {% if not notification.read %}
+                                                    <li>
+                                                        <a class="dropdown-item" 
+                                                           href="{{ url_for('mark_notification_read', notification_id=notification.id) }}">
+                                                            <i class="fas fa-check me-2"></i>Mark as Read
+                                                        </a>
+                                                    </li>
+                                                    {% else %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="#">
+                                                            <i class="fas fa-undo me-2"></i>Mark as Unread
+                                                        </a>
+                                                    </li>
+                                                    {% endif %}
+                                                    {% if notification.ticket_id %}
+                                                    <li>
+                                                        <a class="dropdown-item" 
+                                                           href="{{ url_for('ticket_detail', ticket_id=notification.ticket_id) }}">
+                                                            <i class="fas fa-external-link-alt me-2"></i>View Ticket
+                                                        </a>
+                                                    </li>
+                                                    {% endif %}
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" href="#">
+                                                            <i class="fas fa-trash me-2"></i>Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                {% if notifications|length > 10 %}
+                <div class="d-flex justify-content-center mt-4">
+                    <nav>
+                        <ul class="pagination">
+                            <li class="page-item">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="empty-state" data-aos="fade-up">
+                            <div class="empty-icon mb-4">
+                                <i class="fas fa-bell-slash text-muted" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="text-muted mb-3">No Notifications Yet</h3>
+                            <p class="text-muted mb-4">
+                                You're all caught up! When you have new notifications about your tickets<br>
+                                or system updates, they'll appear here.
+                            </p>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Notification Specific Styles */
+.notification-list {
+    max-height: 800px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    border-bottom: 1px solid var(--light-bg-3);
+    padding: 1.5rem;
+    transition: var(--transition-normal);
+    position: relative;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: var(--light-bg-2);
+}
+
+.notification-item.unread {
+    background-color: #f0f9ff;
+    border-left: 4px solid var(--accent-primary);
+}
+
+.notification-item.unread:hover {
+    background-color: #e0f2fe;
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.notification-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--light-bg-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.notification-item.unread .notification-icon {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.notification-details {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: var(--light-text);
+    margin-bottom: 0.5rem;
+}
+
+.notification-item.unread .notification-title {
+    color: var(--accent-primary);
+}
+
+.notification-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--light-text-muted);
+}
+
+.notification-time,
+.notification-ticket {
+    display: flex;
+    align-items: center;
+}
+
+.notification-body {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.notification-actions {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.empty-state {
+    padding: 2rem;
+}
+
+.empty-icon {
+    opacity: 0.5;
+}
+
+/* Filter buttons */
+.btn-group .btn-check:checked + .btn-outline-primary {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .notification-content {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .notification-icon {
+        align-self: flex-start;
+    }
+    
+    .notification-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .notification-actions {
+        margin-left: 0;
+        margin-top: 0.75rem;
+    }
+}
+
+/* Animation for notification updates */
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-item.new {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Loading state */
+.notification-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('input[name="notificationFilter"]');
+    const notificationItems = document.querySelectorAll('.notification-item');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const filterType = this.id;
+            let visibleCount = 0;
+            
+            notificationItems.forEach(item => {
+                const isUnread = item.classList.contains('unread');
+                let shouldShow = true;
+                
+                if (filterType === 'unread' && !isUnread) {
+                    shouldShow = false;
+                } else if (filterType === 'read' && isUnread) {
+                    shouldShow = false;
+                }
+                
+                if (shouldShow) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update notification count
+            document.getElementById('notification-count').textContent = visibleCount;
+        });
+    });
+    
+    // Auto-refresh notifications every 30 seconds
+    setInterval(refreshNotifications, 30000);
+});
+
+function markAllAsRead() {
+    if (confirm('Are you sure you want to mark all notifications as read?')) {
+        // Add loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Marking...';
+        button.disabled = true;
+        
+        // Simulate API call
+        setTimeout(() => {
+            // Remove unread class from all notifications
+            document.querySelectorAll('.notification-item.unread').forEach(item => {
+                item.classList.remove('unread');
+            });
+            
+            // Update badges
+            document.querySelectorAll('.badge.bg-primary').forEach(badge => {
+                if (badge.textContent === 'New') {
+                    badge.remove();
+                }
+            });
+            
+            // Restore button
+            button.innerHTML = originalText;
+            button.disabled = false;
+            
+            // Show success message
+            showNotification('All notifications marked as read', 'success');
+        }, 1000);
+    }
+}
+
+function refreshNotifications() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    button.disabled = true;
+    
+    // Simulate API call
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        showNotification('Notifications refreshed', 'info');
+    }, 1000);
+}
+
+function showNotification(message, type = 'info') {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 85px; right: 20px; z-index: 1050; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}
