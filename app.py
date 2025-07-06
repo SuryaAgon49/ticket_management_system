@@ -369,10 +369,34 @@ def get_dashboard_stats(user):
             return " ".join(query_parts), current_params
 
         # Helper to safely fetch count
-        def fetch_count(query_tuple):
-            cursor.execute(*query_tuple)
-            result = cursor.fetchone()
-            return result[0] if result else 0
+        def fetch_count(query_info):
+            sql_query = query_info[0]
+            params = None
+            if len(query_info) > 1:
+                # If query_info has a second element, it must be the parameters
+                params = query_info[1]
+                # Ensure params is not an empty list if psycopg2 prefers None for no params
+                if params and not isinstance(params, (list, tuple)):
+                    # This case should ideally not happen if build_query is correct,
+                    # but adding a safeguard.
+                    print(f"WARNING: Expected list/tuple for params, got {type(params)}. Setting to None.")
+                    params = None
+                elif not params: # If params list/tuple is empty, set to None
+                    params = None
+
+            try:
+                if params is not None:
+                    cursor.execute(sql_query, params)
+                else:
+                    cursor.execute(sql_query)
+                
+                result = cursor.fetchone()
+                return result[0] if result else 0
+            except Exception as e:
+                print(f"ERROR in fetch_count: {e}")
+                # Log the full query and params for better debugging if this still fails
+                print(f"Failed query: {sql_query}, Params: {params}")
+                return 0 # Return 0 on error
 
         # Total tickets for the user's view
         stats['total_tickets'] = fetch_count(build_query())
@@ -387,13 +411,12 @@ def get_dashboard_stats(user):
 
         if user['role'] in ['Admin', 'HOD', 'IT Head']:
             # Additional stats for management roles (system-wide or role-specific)
-            all_tickets_query = "SELECT COUNT(*) FROM tickets"
-            cursor.execute(all_tickets_query)
-            stats['total_system_tickets'] = fetch_count((all_tickets_query,)) # Pass as tuple for *unpacking
-            stats['pending_hod_approval'] = fetch_count((all_tickets_query + " WHERE status = 'Pending HOD Approval'",))
-            stats['pending_it_approval'] = fetch_count((all_tickets_query + " WHERE status = 'Pending IT Head Approval'",))
-            stats['approved_tickets'] = fetch_count((all_tickets_query + " WHERE status = 'Approved'",))
-            stats['rejected_tickets'] = fetch_count((all_tickets_query + " WHERE status = 'Rejected'",))
+            # For these, build_query is not used, so we manually create the query_info tuple
+            stats['total_system_tickets'] = fetch_count(("SELECT COUNT(*) FROM tickets",))
+            stats['pending_hod_approval'] = fetch_count(("SELECT COUNT(*) FROM tickets WHERE status = 'Pending HOD Approval'",))
+            stats['pending_it_approval'] = fetch_count(("SELECT COUNT(*) FROM tickets WHERE status = 'Pending IT Head Approval'",))
+            stats['approved_tickets'] = fetch_count(("SELECT COUNT(*) FROM tickets WHERE status = 'Approved'",))
+            stats['rejected_tickets'] = fetch_count(("SELECT COUNT(*) FROM tickets WHERE status = 'Rejected'",))
 
     except psycopg2.Error as e:
         print(f"Database error fetching dashboard stats: {e}")
