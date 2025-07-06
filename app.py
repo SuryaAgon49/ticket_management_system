@@ -328,6 +328,7 @@ def process_ticket_workflow(ticket_id, category, current_user_id):
 def get_dashboard_stats(user):
     """
     Retrieves dashboard statistics directly from the database based on user role.
+    Handles cases where COUNT(*) queries might return no rows by defaulting to 0.
     """
     conn = None
     stats = {}
@@ -367,37 +368,32 @@ def get_dashboard_stats(user):
             
             return " ".join(query_parts), current_params
 
+        # Helper to safely fetch count
+        def fetch_count(query_tuple):
+            cursor.execute(*query_tuple)
+            result = cursor.fetchone()
+            return result[0] if result else 0
+
         # Total tickets for the user's view
-        total_query, total_params = build_query()
-        cursor.execute(total_query, total_params)
-        stats['total_tickets'] = cursor.fetchone()[0]
+        stats['total_tickets'] = fetch_count(build_query())
 
         # Specific status counts for the user's view
-        cursor.execute(*build_query("status = 'Open'"))
-        stats['open_tickets'] = cursor.fetchone()[0]
-        cursor.execute(*build_query("status = 'In Progress'"))
-        stats['in_progress_tickets'] = cursor.fetchone()[0]
-        cursor.execute(*build_query("status = 'Resolved'"))
-        stats['resolved_tickets'] = cursor.fetchone()[0]
-        cursor.execute(*build_query("status = 'Closed'"))
-        stats['closed_tickets'] = cursor.fetchone()[0]
-        cursor.execute(*build_query("status LIKE 'Pending%'"))
-        stats['pending_approval'] = cursor.fetchone()[0]
+        stats['open_tickets'] = fetch_count(build_query("status = 'Open'"))
+        stats['in_progress_tickets'] = fetch_count(build_query("status = 'In Progress'"))
+        stats['resolved_tickets'] = fetch_count(build_query("status = 'Resolved'"))
+        stats['closed_tickets'] = fetch_count(build_query("status = 'Closed'"))
+        stats['pending_approval'] = fetch_count(build_query("status LIKE 'Pending%'"))
 
 
         if user['role'] in ['Admin', 'HOD', 'IT Head']:
             # Additional stats for management roles (system-wide or role-specific)
             all_tickets_query = "SELECT COUNT(*) FROM tickets"
             cursor.execute(all_tickets_query)
-            stats['total_system_tickets'] = cursor.fetchone()[0]
-            cursor.execute(all_tickets_query + " WHERE status = 'Pending HOD Approval'")
-            stats['pending_hod_approval'] = cursor.fetchone()[0]
-            cursor.execute(all_tickets_query + " WHERE status = 'Pending IT Head Approval'")
-            stats['pending_it_approval'] = cursor.fetchone()[0]
-            cursor.execute(all_tickets_query + " WHERE status = 'Approved'")
-            stats['approved_tickets'] = cursor.fetchone()[0]
-            cursor.execute(all_tickets_query + " WHERE status = 'Rejected'")
-            stats['rejected_tickets'] = cursor.fetchone()[0]
+            stats['total_system_tickets'] = fetch_count((all_tickets_query,)) # Pass as tuple for *unpacking
+            stats['pending_hod_approval'] = fetch_count((all_tickets_query + " WHERE status = 'Pending HOD Approval'",))
+            stats['pending_it_approval'] = fetch_count((all_tickets_query + " WHERE status = 'Pending IT Head Approval'",))
+            stats['approved_tickets'] = fetch_count((all_tickets_query + " WHERE status = 'Approved'",))
+            stats['rejected_tickets'] = fetch_count((all_tickets_query + " WHERE status = 'Rejected'",))
 
     except psycopg2.Error as e:
         print(f"Database error fetching dashboard stats: {e}")
