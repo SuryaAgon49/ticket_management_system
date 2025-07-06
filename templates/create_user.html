@@ -3,19 +3,21 @@
 {% block title %}Create New User - IT Ticketing System{% endblock %}
 
 {% block content %}
-<div class="container-fluid" data-aos="fade-up">
-    <!-- Page Header -->
-    <div class="row mb-4">
+<div class="container-fluid px-4">
+    <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h3 mb-0 text-gray-800 fw-bold">Create New User</h1>
-                    <p class="text-muted mb-0">Add a new user to the system with appropriate permissions</p>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-user-plus me-2"></i>Create New User
+                    </h1>
+                    <p class="text-muted mb-0">Add a new user to the IT ticketing system</p>
                 </div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}" class="text-decoration-none">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ url_for('user_list') }}" class="text-decoration-none">Users</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('user_list') }}">Users</a></li>
                         <li class="breadcrumb-item active" aria-current="page">Create User</li>
                     </ol>
                 </nav>
@@ -23,196 +25,224 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-8 col-xl-6">
-            <div class="card shadow-lg border-0" data-aos="fade-up" data-aos-delay="100">
-                <div class="card-header bg-gradient-primary text-white">
+        <div class="col-lg-8 col-xl-7">
+            <!-- Main Form Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
                     <div class="d-flex align-items-center">
-                        <div class="icon-circle me-3">
-                            <i class="fas fa-user-plus"></i>
-                        </div>
-                        <div>
-                            <h5 class="card-title mb-1">User Information</h5>
-                            <p class="card-text opacity-75 mb-0 small">Fill in the details for the new user account</p>
-                        </div>
+                        <i class="fas fa-user-circle me-2"></i>
+                        <h5 class="mb-0">User Information</h5>
                     </div>
                 </div>
-                
                 <div class="card-body p-4">
-                    <form action="{{ url_for('create_user') }}" method="POST" id="createUserForm" novalidate>
+                    <form method="POST" id="createUserForm" novalidate>
                         <div class="row">
-                            <!-- Username Field -->
-                            <div class="col-md-6 mb-3">
-                                <label for="username" class="form-label fw-semibold">
-                                    <i class="fas fa-user me-2 text-primary"></i>Username
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light">
-                                        <i class="fas fa-at text-muted"></i>
-                                    </span>
-                                    <input type="text" 
-                                           id="username" 
-                                           name="username" 
-                                           class="form-control" 
-                                           placeholder="Enter unique username"
-                                           required
-                                           autocomplete="username">
-                                    <div class="invalid-feedback">
-                                        Please provide a valid username.
-                                    </div>
-                                </div>
-                                <small class="text-muted">Username must be unique and contain only letters, numbers, and underscores.</small>
+                            <!-- Personal Information Section -->
+                            <div class="col-12 mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-user me-2"></i>Personal Information
+                                </h6>
                             </div>
-
-                            <!-- Password Field -->
-                            <div class="col-md-6 mb-3">
-                                <label for="password" class="form-label fw-semibold">
-                                    <i class="fas fa-lock me-2 text-primary"></i>Password
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light">
-                                        <i class="fas fa-key text-muted"></i>
-                                    </span>
-                                    <input type="password" 
-                                           id="password" 
-                                           name="password" 
-                                           class="form-control" 
-                                           placeholder="Set a secure password"
-                                           required
-                                           autocomplete="new-password">
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                        <i class="fas fa-eye" id="togglePasswordIcon"></i>
-                                    </button>
-                                    <div class="invalid-feedback">
-                                        Password must be at least 8 characters long.
-                                    </div>
-                                </div>
-                                <div class="password-strength mt-2">
-                                    <div class="progress" style="height: 4px;">
-                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    <small class="text-muted" id="passwordStrength"></small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <!-- Full Name Field -->
+                            
+                            <!-- Full Name -->
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="form-label fw-semibold">
-                                    <i class="fas fa-id-card me-2 text-primary"></i>Full Name
-                                    <span class="text-danger">*</span>
+                                    Full Name <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="fas fa-user text-muted"></i>
                                     </span>
                                     <input type="text" 
+                                           class="form-control" 
                                            id="name" 
                                            name="name" 
-                                           class="form-control" 
-                                           placeholder="Enter user's full name"
-                                           required
+                                           required 
+                                           placeholder="Enter full name"
                                            autocomplete="name">
                                     <div class="invalid-feedback">
-                                        Please provide the user's full name.
+                                        Please provide a valid full name.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Email Field -->
+                            <!-- Email Address -->
                             <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label fw-semibold">
-                                    <i class="fas fa-envelope me-2 text-primary"></i>Email Address
-                                    <span class="text-muted small">(Optional)</span>
+                                    Email Address
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
-                                        <i class="fas fa-at text-muted"></i>
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope text-muted"></i>
                                     </span>
                                     <input type="email" 
+                                           class="form-control" 
                                            id="email" 
                                            name="email" 
-                                           class="form-control" 
-                                           placeholder="user@example.com"
+                                           placeholder="Enter email address"
                                            autocomplete="email">
                                     <div class="invalid-feedback">
                                         Please provide a valid email address.
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Role Selection -->
-                        <div class="mb-4">
-                            <label for="role" class="form-label fw-semibold">
-                                <i class="fas fa-user-tag me-2 text-primary"></i>User Role
-                                <span class="text-danger">*</span>
-                            </label>
-                            <select id="role" name="role" class="form-select" required>
-                                <option value="">Select a role for this user</option>
-                                {% for role_option in roles %}
-                                <option value="{{ role_option }}" data-description="{{ role_descriptions.get(role_option, '') }}">
-                                    {{ role_option }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <div class="invalid-feedback">
-                                Please select a role for this user.
+                            <!-- Account Information Section -->
+                            <div class="col-12 mb-4 mt-3">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-key me-2"></i>Account Information
+                                </h6>
                             </div>
-                            <div class="role-description mt-2">
-                                <div class="alert alert-info d-none" id="roleDescription">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <span id="roleDescriptionText"></span>
+
+                            <!-- Username -->
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label fw-semibold">
+                                    Username <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-at text-muted"></i>
+                                    </span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="username" 
+                                           name="username" 
+                                           required 
+                                           placeholder="Enter username"
+                                           autocomplete="username">
+                                    <div class="invalid-feedback">
+                                        Please provide a valid username.
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Username must be unique and contain only letters, numbers, and underscores.
+                                </small>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label fw-semibold">
+                                    Password <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock text-muted"></i>
+                                    </span>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="password" 
+                                           name="password" 
+                                           required 
+                                           placeholder="Enter password"
+                                           autocomplete="new-password">
+                                    <button class="btn btn-outline-secondary" 
+                                            type="button" 
+                                            id="togglePassword"
+                                            title="Show/Hide Password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <div class="invalid-feedback">
+                                        Please provide a valid password.
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Password should be at least 8 characters long.
+                                </small>
+                            </div>
+
+                            <!-- Role Selection Section -->
+                            <div class="col-12 mb-4 mt-3">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-user-cog me-2"></i>Role Assignment
+                                </h6>
+                            </div>
+
+                            <!-- Role Selection -->
+                            <div class="col-12 mb-4">
+                                <label for="role" class="form-label fw-semibold">
+                                    User Role <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-users-cog text-muted"></i>
+                                    </span>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="">Select a role...</option>
+                                        {% for role in roles %}
+                                        <option value="{{ role }}" data-role="{{ role }}">{{ role }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please select a valid role.
+                                    </div>
+                                </div>
+
+                                <!-- Role Descriptions -->
+                                <div class="mt-3">
+                                    <div class="role-description d-none" data-role="Admin">
+                                        <div class="alert alert-info border-0 shadow-sm">
+                                            <i class="fas fa-crown me-2"></i>
+                                            <strong>Admin:</strong> Full system access with user management and configuration privileges.
+                                        </div>
+                                    </div>
+                                    <div class="role-description d-none" data-role="IT Head">
+                                        <div class="alert alert-warning border-0 shadow-sm">
+                                            <i class="fas fa-user-tie me-2"></i>
+                                            <strong>IT Head:</strong> Oversees IT operations, approves requests, and manages technical staff.
+                                        </div>
+                                    </div>
+                                    <div class="role-description d-none" data-role="HOD">
+                                        <div class="alert alert-success border-0 shadow-sm">
+                                            <i class="fas fa-user-graduate me-2"></i>
+                                            <strong>HOD (Head of Department):</strong> Approves departmental requests and manages team members.
+                                        </div>
+                                    </div>
+                                    <div class="role-description d-none" data-role="Technician">
+                                        <div class="alert alert-primary border-0 shadow-sm">
+                                            <i class="fas fa-tools me-2"></i>
+                                            <strong>Technician:</strong> Resolves technical issues and maintains IT infrastructure.
+                                        </div>
+                                    </div>
+                                    <div class="role-description d-none" data-role="User">
+                                        <div class="alert alert-secondary border-0 shadow-sm">
+                                            <i class="fas fa-user me-2"></i>
+                                            <strong>User:</strong> Standard user with ability to create and track support tickets.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <small class="text-muted">Your permissions determine which roles you can assign to new users.</small>
-                        </div>
 
-                        <!-- Additional Options -->
-                        <div class="mb-4">
-                            <div class="card bg-light border-0">
-                                <div class="card-body py-3">
-                                    <h6 class="card-title mb-3">
-                                        <i class="fas fa-cogs me-2 text-primary"></i>Additional Options
-                                    </h6>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="sendWelcomeEmail" name="send_welcome_email" value="true">
-                                                <label class="form-check-label" for="sendWelcomeEmail">
-                                                    Send welcome email
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="forcePasswordChange" name="force_password_change" value="true" checked>
-                                                <label class="form-check-label" for="forcePasswordChange">
-                                                    Force password change on first login
-                                                </label>
-                                            </div>
-                                        </div>
+                            <!-- Permission Info -->
+                            <div class="col-12 mb-4">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body p-3">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-info-circle text-primary me-2"></i>
+                                            Your Creation Permissions
+                                        </h6>
+                                        <p class="text-muted mb-0 small">
+                                            As a <strong>{{ user.role }}</strong>, you can create users with the following roles:
+                                            <span class="badge bg-primary ms-2">{{ roles|join(', ') }}</span>
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('user_list') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Users
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <a href="{{ url_for('user_list') }}" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
                             </a>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-primary" id="previewBtn">
-                                    <i class="fas fa-eye me-2"></i>Preview
+                            <div>
+                                <button type="reset" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-undo me-2"></i>Reset
                                 </button>
-                                <button type="submit" class="btn btn-primary px-4">
+                                <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-user-plus me-2"></i>Create User
-                                    <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                                 </button>
                             </div>
                         </div>
@@ -223,154 +253,157 @@
     </div>
 </div>
 
-<!-- Preview Modal -->
-<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="previewModalLabel">
-                    <i class="fas fa-eye me-2"></i>User Preview
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-4 text-center">
-                        <div class="user-avatar-large mb-3">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <h6 id="previewName" class="mb-1"></h6>
-                        <p id="previewRole" class="text-muted small mb-0"></p>
-                    </div>
-                    <div class="col-md-8">
-                        <dl class="row">
-                            <dt class="col-sm-4">Username:</dt>
-                            <dd class="col-sm-8" id="previewUsername"></dd>
-                            
-                            <dt class="col-sm-4">Email:</dt>
-                            <dd class="col-sm-8" id="previewEmail"></dd>
-                            
-                            <dt class="col-sm-4">Role:</dt>
-                            <dd class="col-sm-8" id="previewRoleDetail"></dd>
-                            
-                            <dt class="col-sm-4">Options:</dt>
-                            <dd class="col-sm-8">
-                                <div id="previewOptions"></div>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="confirmCreate">
-                    <i class="fas fa-check me-2"></i>Looks Good, Create User
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Custom JavaScript for enhanced functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('createUserForm');
+    const roleSelect = document.getElementById('role');
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    
+    // Bootstrap form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+    
+    // Role description toggle
+    roleSelect.addEventListener('change', function() {
+        // Hide all role descriptions
+        document.querySelectorAll('.role-description').forEach(desc => {
+            desc.classList.add('d-none');
+        });
+        
+        // Show selected role description
+        if (this.value) {
+            const selectedDesc = document.querySelector(`[data-role="${this.value}"]`);
+            if (selectedDesc) {
+                selectedDesc.classList.remove('d-none');
+            }
+        }
+    });
+    
+    // Password toggle
+    togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        const icon = this.querySelector('i');
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    });
+    
+    // Username validation (alphanumeric and underscore only)
+    const usernameInput = document.getElementById('username');
+    usernameInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^a-zA-Z0-9_]/g, '');
+    });
+    
+    // Password strength indicator
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        const strength = getPasswordStrength(password);
+        updatePasswordStrength(strength);
+    });
+    
+    function getPasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+        if (password.match(/\d/)) strength++;
+        if (password.match(/[^a-zA-Z\d]/)) strength++;
+        return strength;
+    }
+    
+    function updatePasswordStrength(strength) {
+        const strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+        const strengthColors = ['danger', 'warning', 'info', 'success', 'success'];
+        
+        let strengthIndicator = document.getElementById('passwordStrength');
+        if (!strengthIndicator) {
+            strengthIndicator = document.createElement('small');
+            strengthIndicator.id = 'passwordStrength';
+            strengthIndicator.className = 'form-text';
+            passwordInput.parentNode.parentNode.appendChild(strengthIndicator);
+        }
+        
+        if (passwordInput.value.length > 0) {
+            strengthIndicator.innerHTML = `
+                <i class="fas fa-shield-alt me-1"></i>
+                Password strength: <span class="text-${strengthColors[strength]}">${strengthText[strength]}</span>
+            `;
+        } else {
+            strengthIndicator.innerHTML = '';
+        }
+    }
+    
+    // Form reset handling
+    form.addEventListener('reset', function() {
+        form.classList.remove('was-validated');
+        document.querySelectorAll('.role-description').forEach(desc => {
+            desc.classList.add('d-none');
+        });
+        document.getElementById('passwordStrength').innerHTML = '';
+    });
+});
+</script>
 
 <style>
-.bg-gradient-primary {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
-}
-
-.icon-circle {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-}
-
-.input-group-text {
-    border: 1px solid var(--light-bg-3);
-    color: var(--light-text-muted);
-}
-
-.form-control:focus + .input-group-text,
-.form-control:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
-}
-
-.password-strength .progress-bar {
+.role-description {
     transition: all 0.3s ease;
 }
 
-.password-strength .progress-bar.weak {
-    background-color: #dc3545;
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-.password-strength .progress-bar.medium {
-    background-color: #ffc107;
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
 }
 
-.password-strength .progress-bar.strong {
-    background-color: #28a745;
+.card {
+    border-radius: 0.75rem;
 }
 
-.user-avatar-large {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 2rem;
-    margin: 0 auto;
+.card-header {
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+.btn {
+    border-radius: 0.5rem;
+}
+
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.was-validated .form-control:valid {
+    border-color: #198754;
+}
+
+.was-validated .form-control:invalid {
+    border-color: #dc3545;
 }
 
 .breadcrumb {
-    background: none;
+    background-color: transparent;
     padding: 0;
 }
 
 .breadcrumb-item + .breadcrumb-item::before {
-    color: var(--light-text-muted);
+    content: "›";
+    font-weight: bold;
 }
 
-.form-check-input:checked {
-    background-color: var(--accent-primary);
-    border-color: var(--accent-primary);
-}
-
-.btn-primary {
-    background-color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    background-color: var(--accent-primary-hover);
-    border-color: var(--accent-primary-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-}
-
-.btn-outline-primary {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-}
-
-.btn-outline-primary:hover {
-    background-color: var(--accent-primary);
-    border-color: var(--accent-primary);
-}
-
-.card {
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+.alert {
+    border-radius: 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -379,189 +412,9 @@
         gap: 1rem;
     }
     
-    .d-flex.gap-2 {
-        justify-content: stretch;
-    }
-    
-    .d-flex.gap-2 .btn {
-        flex: 1;
+    .d-flex.justify-content-between .btn {
+        width: 100%;
     }
 }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('createUserForm');
-    const passwordInput = document.getElementById('password');
-    const togglePasswordBtn = document.getElementById('togglePassword');
-    const togglePasswordIcon = document.getElementById('togglePasswordIcon');
-    const roleSelect = document.getElementById('role');
-    const roleDescription = document.getElementById('roleDescription');
-    const roleDescriptionText = document.getElementById('roleDescriptionText');
-    const previewBtn = document.getElementById('previewBtn');
-    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
-    const confirmCreateBtn = document.getElementById('confirmCreate');
-    
-    // Role descriptions
-    const roleDescriptions = {
-        'Admin': 'Full system access with all administrative privileges',
-        'IT Head': 'Manage IT department tickets and users',
-        'HOD': 'Head of Department with elevated permissions',
-        'User': 'Standard user with ticket creation and viewing rights'
-    };
-    
-    // Password visibility toggle
-    togglePasswordBtn.addEventListener('click', function() {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        togglePasswordIcon.classList.toggle('fa-eye');
-        togglePasswordIcon.classList.toggle('fa-eye-slash');
-    });
-    
-    // Password strength checker
-    passwordInput.addEventListener('input', function() {
-        const password = this.value;
-        const progressBar = document.querySelector('.password-strength .progress-bar');
-        const strengthText = document.getElementById('passwordStrength');
-        
-        let strength = 0;
-        let strengthLabel = '';
-        
-        if (password.length >= 8) strength += 25;
-        if (password.match(/[a-z]/)) strength += 25;
-        if (password.match(/[A-Z]/)) strength += 25;
-        if (password.match(/[0-9]/)) strength += 25;
-        if (password.match(/[^a-zA-Z0-9]/)) strength += 25;
-        
-        progressBar.style.width = Math.min(strength, 100) + '%';
-        progressBar.classList.remove('weak', 'medium', 'strong');
-        
-        if (strength < 50) {
-            progressBar.classList.add('weak');
-            strengthLabel = 'Weak';
-        } else if (strength < 75) {
-            progressBar.classList.add('medium');
-            strengthLabel = 'Medium';
-        } else {
-            progressBar.classList.add('strong');
-            strengthLabel = 'Strong';
-        }
-        
-        strengthText.textContent = password.length > 0 ? `Password strength: ${strengthLabel}` : '';
-    });
-    
-    // Role description display
-    roleSelect.addEventListener('change', function() {
-        const selectedRole = this.value;
-        if (selectedRole && roleDescriptions[selectedRole]) {
-            roleDescriptionText.textContent = roleDescriptions[selectedRole];
-            roleDescription.classList.remove('d-none');
-        } else {
-            roleDescription.classList.add('d-none');
-        }
-    });
-    
-    // Preview functionality
-    previewBtn.addEventListener('click', function() {
-        const formData = new FormData(form);
-        
-        // Populate preview modal
-        document.getElementById('previewName').textContent = formData.get('name') || 'N/A';
-        document.getElementById('previewUsername').textContent = formData.get('username') || 'N/A';
-        document.getElementById('previewEmail').textContent = formData.get('email') || 'Not provided';
-        document.getElementById('previewRole').textContent = formData.get('role') || 'N/A';
-        document.getElementById('previewRoleDetail').textContent = formData.get('role') || 'N/A';
-        
-        // Preview options
-        const options = [];
-        if (formData.get('send_welcome_email')) options.push('Send welcome email');
-        if (formData.get('force_password_change')) options.push('Force password change on first login');
-        
-        document.getElementById('previewOptions').innerHTML = options.length > 0 
-            ? options.map(opt => `<span class="badge bg-secondary me-1">${opt}</span>`).join('')
-            : '<span class="text-muted">No additional options selected</span>';
-        
-        // Update avatar
-        const avatar = document.querySelector('.user-avatar-large i');
-        const name = formData.get('name');
-        if (name) {
-            avatar.textContent = name.charAt(0).toUpperCase();
-        }
-        
-        previewModal.show();
-    });
-    
-    // Confirm create from preview
-    confirmCreateBtn.addEventListener('click', function() {
-        previewModal.hide();
-        form.submit();
-    });
-    
-    // Form validation
-    form.addEventListener('submit', function(e) {
-        if (!form.checkValidity()) {
-            e.preventDefault();
-            e.stopPropagation();
-        } else {
-            // Show loading state
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const spinner = submitBtn.querySelector('.spinner-border');
-            submitBtn.disabled = true;
-            spinner.classList.remove('d-none');
-        }
-        
-        form.classList.add('was-validated');
-    });
-    
-    // Real-time validation
-    const inputs = form.querySelectorAll('input[required], select[required]');
-    inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            if (this.checkValidity()) {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-            } else {
-                this.classList.remove('is-valid');
-                this.classList.add('is-invalid');
-            }
-        });
-    });
-    
-    // Username validation
-    const usernameInput = document.getElementById('username');
-    usernameInput.addEventListener('input', function() {
-        const username = this.value;
-        const isValid = /^[a-zA-Z0-9_]+$/.test(username);
-        
-        if (username.length > 0) {
-            if (isValid) {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-            } else {
-                this.classList.remove('is-valid');
-                this.classList.add('is-invalid');
-            }
-        } else {
-            this.classList.remove('is-valid', 'is-invalid');
-        }
-    });
-    
-    // Email validation
-    const emailInput = document.getElementById('email');
-    emailInput.addEventListener('input', function() {
-        const email = this.value;
-        if (email.length > 0) {
-            if (this.checkValidity()) {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-            } else {
-                this.classList.remove('is-valid');
-                this.classList.add('is-invalid');
-            }
-        } else {
-            this.classList.remove('is-valid', 'is-invalid');
-        }
-    });
-});
-</script>
 {% endblock %}
