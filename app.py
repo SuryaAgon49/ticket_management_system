@@ -8,6 +8,7 @@ import re
 import psycopg2 # Import psycopg2 for PostgreSQL
 from psycopg2.extras import DictCursor # For dictionary-like row access
 from dotenv import load_dotenv # Import load_dotenv
+import sys # Import sys for stderr logging
 
 load_dotenv() # Load environment variables from .env file
 
@@ -25,6 +26,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 # Create upload directory if it doesn't exist (for local development, Render handles persistent storage differently)
+# Note: On Render, this directory will be ephemeral. For persistent storage, consider using a cloud storage service.
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # --- Database Configuration ---
@@ -35,128 +37,148 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 # Helper function to get a database connection
 def get_db():
     if not DATABASE_URL:
+        # Log this error prominently to stderr for Render logs
+        print("ERROR: DATABASE_URL environment variable is not set. Please configure it on Render.", file=sys.stderr)
         raise ValueError("DATABASE_URL environment variable is not set. Please configure it on Render.")
-    conn = psycopg2.connect(DATABASE_URL)
-    # Use DictCursor to access columns by name
-    return conn
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        # Use DictCursor to access columns by name
+        return conn
+    except psycopg2.Error as e:
+        # Log database connection errors prominently to stderr
+        print(f"CRITICAL ERROR: Could not connect to database using DATABASE_URL: {e}", file=sys.stderr)
+        # Re-raise a more specific error for easier debugging upstream
+        raise ConnectionError(f"Database connection failed: {e}") from e
 
 # Function to initialize the database schema and add a default admin user
 def init_db():
-    with app.app_context():
-        conn = None
-        try:
-            conn = get_db()
-            cursor = conn.cursor(cursor_factory=DictCursor) # Use DictCursor for schema creation too
+    conn = None
+    try:
+        conn = get_db() # This might raise ConnectionError or ValueError
+        cursor = conn.cursor(cursor_factory=DictCursor) # Use DictCursor for schema creation too
 
-            # Create users table
+        # Create users table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL,
+                name TEXT NOT NULL,
+                email TEXT
+            )
+        ''')
+
+        # Create tickets table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                category TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_by TEXT NOT NULL,
+                created_by_name TEXT NOT NULL,
+                assigned_to TEXT,
+                assigned_to_name TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (created_by) REFERENCES users (id),
+                FOREIGN KEY (assigned_to) REFERENCES users (id)
+            )
+        ''')
+
+        # Create comments table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS comments (
+                id TEXT PRIMARY KEY,
+                ticket_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                user_name TEXT NOT NULL,
+                message TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                type TEXT NOT NULL, -- e.g., 'comment', 'status_update', 'assignment'
+                FOREIGN KEY (ticket_id) REFERENCES tickets (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
+
+        # Create attachments table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS attachments (
+                id TEXT PRIMARY KEY,
+                ticket_id TEXT NOT NULL,
+                original_name TEXT NOT NULL,
+                stored_name TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                FOREIGN KEY (ticket_id) REFERENCES tickets (id)
+            )
+        ''')
+
+        # Create notifications table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS notifications (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                message TEXT NOT NULL,
+                ticket_id TEXT,
+                timestamp TEXT NOT NULL,
+                read INTEGER NOT NULL, -- 0 for unread, 1 for read
+                FOREIGN KEY (user_id) REFERENCES users (id),
+                FOREIGN KEY (ticket_id) REFERENCES tickets (id)
+            )
+        ''')
+
+        # Create approval_history table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS approval_history (
+                id TEXT PRIMARY KEY,
+                ticket_id TEXT NOT NULL,
+                approver TEXT NOT NULL,
+                role TEXT NOT NULL,
+                action TEXT NOT NULL, -- e.g., 'Approved', 'Rejected'
+                timestamp TEXT NOT NULL,
+                FOREIGN KEY (ticket_id) REFERENCES tickets (id)
+            )
+        ''')
+
+        conn.commit()
+
+        # Add default admin user if not exists
+        cursor.execute("SELECT * FROM users WHERE id = 'admin'")
+        if not cursor.fetchone():
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id TEXT PRIMARY KEY,
-                    username TEXT UNIQUE NOT NULL,
-                    password TEXT NOT NULL,
-                    role TEXT NOT NULL,
-                    name TEXT NOT NULL,
-                    email TEXT
-                )
-            ''')
-
-            # Create tickets table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS tickets (
-                    id TEXT PRIMARY KEY,
-                    title TEXT NOT NULL,
-                    description TEXT NOT NULL,
-                    category TEXT NOT NULL,
-                    priority TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    created_by TEXT NOT NULL,
-                    created_by_name TEXT NOT NULL,
-                    assigned_to TEXT,
-                    assigned_to_name TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (created_by) REFERENCES users (id),
-                    FOREIGN KEY (assigned_to) REFERENCES users (id)
-                )
-            ''')
-
-            # Create comments table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS comments (
-                    id TEXT PRIMARY KEY,
-                    ticket_id TEXT NOT NULL,
-                    user_id TEXT NOT NULL,
-                    user_name TEXT NOT NULL,
-                    message TEXT NOT NULL,
-                    timestamp TEXT NOT NULL,
-                    type TEXT NOT NULL, -- e.g., 'comment', 'status_update', 'assignment'
-                    FOREIGN KEY (ticket_id) REFERENCES tickets (id),
-                    FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-            ''')
-
-            # Create attachments table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS attachments (
-                    id TEXT PRIMARY KEY,
-                    ticket_id TEXT NOT NULL,
-                    original_name TEXT NOT NULL,
-                    stored_name TEXT NOT NULL,
-                    file_path TEXT NOT NULL,
-                    FOREIGN KEY (ticket_id) REFERENCES tickets (id)
-                )
-            ''')
-
-            # Create notifications table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS notifications (
-                    id TEXT PRIMARY KEY,
-                    user_id TEXT NOT NULL,
-                    message TEXT NOT NULL,
-                    ticket_id TEXT,
-                    timestamp TEXT NOT NULL,
-                    read INTEGER NOT NULL, -- 0 for unread, 1 for read
-                    FOREIGN KEY (user_id) REFERENCES users (id),
-                    FOREIGN KEY (ticket_id) REFERENCES tickets (id)
-                )
-            ''')
-
-            # Create approval_history table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS approval_history (
-                    id TEXT PRIMARY KEY,
-                    ticket_id TEXT NOT NULL,
-                    approver TEXT NOT NULL,
-                    role TEXT NOT NULL,
-                    action TEXT NOT NULL, -- e.g., 'Approved', 'Rejected'
-                    timestamp TEXT NOT NULL,
-                    FOREIGN KEY (ticket_id) REFERENCES tickets (id)
-                )
-            ''')
-
+                INSERT INTO users (id, username, password, role, name, email)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            ''', ('admin', 'admin', 'admin123', 'Admin', 'System Administrator', 'admin@company.com'))
             conn.commit()
-
-            # Add default admin user if not exists
-            cursor.execute("SELECT * FROM users WHERE id = 'admin'")
-            if not cursor.fetchone():
-                cursor.execute('''
-                    INSERT INTO users (id, username, password, role, name, email)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', ('admin', 'admin', 'admin123', 'Admin', 'System Administrator', 'admin@company.com'))
-                conn.commit()
-                print("Default admin user created.") # For debugging/initial setup confirmation
-        except psycopg2.Error as e:
-            print(f"Database initialization error: {e}")
-            if conn:
-                conn.rollback() # Rollback in case of error
-        finally:
-            if conn:
-                conn.close()
+            print("Default admin user created.") # For debugging/initial setup confirmation
+        print("Database schema initialized and default admin user checked/created successfully.")
+    except (psycopg2.Error, ValueError, ConnectionError) as e:
+        # Log critical database initialization errors to stderr
+        print(f"CRITICAL ERROR: Database initialization failed during app startup: {e}", file=sys.stderr)
+        if conn:
+            conn.rollback() # Rollback in case of error
+        # Re-raise the exception to prevent the app from starting if DB init fails
+        raise
+    finally:
+        if conn:
+            conn.close()
 
 
 # Initialize the database on app startup
-with app.app_context():
-    init_db()
+# This block is crucial. If init_db fails, the app won't start,
+# and Render will report a 502 or deployment failure.
+try:
+    with app.app_context():
+        init_db()
+except Exception as e:
+    # If database initialization fails, log it and exit the application process.
+    # Render will then report a deployment error or a 502.
+    print(f"Application failed to start due to a critical database initialization error: {e}", file=sys.stderr)
+    sys.exit(1) # Exit with a non-zero status code to indicate failure
+
 
 # --- Global Configurations (moved from in-memory data) ---
 TICKET_CATEGORIES = {
@@ -189,8 +211,8 @@ def get_current_user():
             user_data = cursor.fetchone()
             if user_data:
                 return dict(user_data)  # Convert Row object to dictionary
-        except psycopg2.Error as e:
-            print(f"Database error getting current user: {e}")
+        except (psycopg2.Error, ConnectionError, ValueError) as e:
+            print(f"Database error getting current user: {e}", file=sys.stderr)
         finally:
             if conn:
                 conn.close()
@@ -214,8 +236,8 @@ def add_notification(user_id, message, ticket_id=None):
             VALUES (%s, %s, %s, %s, %s, %s)
         ''', (str(uuid.uuid4()), user_id, message, ticket_id, datetime.now().isoformat(), 0))
         conn.commit()
-    except psycopg2.Error as e:
-        print(f"Database error adding notification: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error adding notification: {e}", file=sys.stderr)
         flash('Error adding notification.', 'error')
     finally:
         if conn:
@@ -230,8 +252,8 @@ def get_users_by_role(role):
         cursor.execute("SELECT * FROM users WHERE role = %s", (role,))
         users_data = cursor.fetchall()
         return [dict(user) for user in users_data]
-    except psycopg2.Error as e:
-        print(f"Database error fetching users by role: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching users by role: {e}", file=sys.stderr)
         return []
     finally:
         if conn:
@@ -272,8 +294,8 @@ def get_filtered_tickets(user):
         cursor.execute(query, params)
         tickets_data = cursor.fetchall()
         return [dict(t) for t in tickets_data]
-    except psycopg2.Error as e:
-        print(f"Database error fetching filtered tickets: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching filtered tickets: {e}", file=sys.stderr)
         return []
     finally:
         if conn:
@@ -315,8 +337,8 @@ def process_ticket_workflow(ticket_id, category, current_user_id):
         cursor.execute("UPDATE tickets SET status = %s, updated_at = %s WHERE id = %s",
                        (new_status, current_time, ticket_id))
         conn.commit()
-    except psycopg2.Error as e:
-        print(f"Database error processing ticket workflow: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error processing ticket workflow: {e}", file=sys.stderr)
         flash('Error processing ticket workflow.', 'error')
         if conn:
             conn.rollback()
@@ -379,7 +401,7 @@ def get_dashboard_stats(user):
                 if params and not isinstance(params, (list, tuple)):
                     # This case should ideally not happen if build_query is correct,
                     # but adding a safeguard.
-                    print(f"WARNING: Expected list/tuple for params, got {type(params)}. Setting to None.")
+                    print(f"WARNING: Expected list/tuple for params, got {type(params)}. Setting to None.", file=sys.stderr)
                     params = None
                 elif not params: # If params list/tuple is empty, set to None
                     params = None
@@ -393,9 +415,9 @@ def get_dashboard_stats(user):
                 result = cursor.fetchone()
                 return result[0] if result else 0
             except Exception as e:
-                print(f"ERROR in fetch_count: {e}")
+                print(f"ERROR in fetch_count: {e}", file=sys.stderr)
                 # Log the full query and params for better debugging if this still fails
-                print(f"Failed query: {sql_query}, Params: {params}")
+                print(f"Failed query: {sql_query}, Params: {params}", file=sys.stderr)
                 return 0 # Return 0 on error
 
         # Total tickets for the user's view
@@ -418,8 +440,8 @@ def get_dashboard_stats(user):
             stats['approved_tickets'] = fetch_count(("SELECT COUNT(*) FROM tickets WHERE status = 'Approved'",))
             stats['rejected_tickets'] = fetch_count(("SELECT COUNT(*) FROM tickets WHERE status = 'Rejected'",))
 
-    except psycopg2.Error as e:
-        print(f"Database error fetching dashboard stats: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching dashboard stats: {e}", file=sys.stderr)
         flash('Error fetching dashboard statistics.', 'error')
         # Return default zero stats on error
         return {
@@ -461,8 +483,8 @@ def login():
                 return redirect(url_for('dashboard'))
             else:
                 flash('Invalid username or password', 'error')
-        except psycopg2.Error as e:
-            print(f"Database error during login: {e}")
+        except (psycopg2.Error, ConnectionError, ValueError) as e:
+            print(f"Database error during login: {e}", file=sys.stderr)
             flash('An error occurred during login. Please try again.', 'error')
         finally:
             if conn:
@@ -494,8 +516,8 @@ def dashboard():
         cursor = conn.cursor(cursor_factory=DictCursor)
         cursor.execute("SELECT * FROM notifications WHERE user_id = %s ORDER BY timestamp DESC LIMIT 3", (user['id'],))
         user_notifications = [dict(n) for n in cursor.fetchall()]
-    except psycopg2.Error as e:
-        print(f"Database error fetching notifications for dashboard: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching notifications for dashboard: {e}", file=sys.stderr)
         flash('Error loading notifications for dashboard.', 'error')
     finally:
         if conn:
@@ -568,8 +590,8 @@ def create_ticket():
 
             flash('Ticket created successfully!', 'success')
             return redirect(url_for('ticket_list'))
-        except psycopg2.Error as e:
-            print(f"Database error creating ticket: {e}")
+        except (psycopg2.Error, ConnectionError, ValueError) as e:
+            print(f"Database error creating ticket: {e}", file=sys.stderr)
             flash('An error occurred while creating the ticket. Please try again.', 'error')
             # Rollback in case of error
             if conn:
@@ -630,8 +652,8 @@ def ticket_list():
         cursor.execute(query, params)
         tickets_data = cursor.fetchall()
         tickets = [dict(t) for t in tickets_data]
-    except psycopg2.Error as e:
-        print(f"Database error fetching ticket list: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching ticket list: {e}", file=sys.stderr)
         flash('Error loading tickets.', 'error')
         tickets = []
     finally:
@@ -702,8 +724,8 @@ def ticket_detail(ticket_id):
                                statuses=TICKET_STATUSES,
                                technicians=technicians,
                                now=datetime.now())
-    except psycopg2.Error as e:
-        print(f"Database error fetching ticket detail: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching ticket detail: {e}", file=sys.stderr)
         flash('An error occurred loading ticket details.', 'error')
         return redirect(url_for('ticket_list'))
     finally:
@@ -803,8 +825,8 @@ def approve_ticket(ticket_id, action):
                        (new_status, datetime.now().isoformat(), ticket_id))
         conn.commit()
 
-    except psycopg2.Error as e:
-        print(f"Database error during approval: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error during approval: {e}", file=sys.stderr)
         flash('An error occurred during the approval process. Please try again.', 'error')
         if conn:
             conn.rollback()
@@ -866,8 +888,8 @@ def assign_ticket(ticket_id):
                 flash('Invalid technician selected.', 'error')
         else:
             flash('No technician selected.', 'error')
-    except psycopg2.Error as e:
-        print(f"Database error during assignment: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error during assignment: {e}", file=sys.stderr)
         flash('An error occurred during assignment. Please try again.', 'error')
         if conn:
             conn.rollback()
@@ -955,8 +977,8 @@ def update_ticket(ticket_id):
         else:
             flash('No valid action performed (status update or comment).', 'error')
 
-    except psycopg2.Error as e:
-        print(f"Database error during ticket update: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error during ticket update: {e}", file=sys.stderr)
         flash('An error occurred during ticket update. Please try again.', 'error')
         if conn:
             conn.rollback()
@@ -1017,8 +1039,8 @@ def download_attachment(ticket_id, stored_name):
         else:
             flash('File not found on server.', 'error')
             return redirect(url_for('ticket_detail', ticket_id=ticket_id))
-    except psycopg2.Error as e:
-        print(f"Database error during attachment download: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error during attachment download: {e}", file=sys.stderr)
         flash('An error occurred during download. Please try again.', 'error')
         return redirect(url_for('ticket_detail', ticket_id=ticket_id))
     finally:
@@ -1044,8 +1066,8 @@ def user_list():
         cursor.execute("SELECT * FROM users ORDER BY name ASC")
         all_users_data = cursor.fetchall()
         all_users = [dict(u) for u in all_users_data]
-    except psycopg2.Error as e:
-        print(f"Database error fetching user list: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching user list: {e}", file=sys.stderr)
         flash('Error loading user list.', 'error')
         all_users = []
     finally:
@@ -1107,8 +1129,8 @@ def create_user():
                 conn.commit()
                 flash('User created successfully!', 'success')
                 return redirect(url_for('user_list'))
-        except psycopg2.Error as e:
-            print(f"Database error creating user: {e}")
+        except (psycopg2.Error, ConnectionError, ValueError) as e:
+            print(f"Database error creating user: {e}", file=sys.stderr)
             flash('An error occurred while creating the user. Please try again.', 'error')
             if conn:
                 conn.rollback()
@@ -1145,11 +1167,11 @@ def notifications_page():
                 notification['timestamp'] = datetime.fromisoformat(notification['timestamp'])
             except (ValueError, TypeError):
                 # If conversion fails, keep it as is or handle as appropriate (e.g., set to None)
-                print(f"Warning: Could not convert timestamp '{notification['timestamp']}' to datetime for notification {notification['id']}")
+                print(f"Warning: Could not convert timestamp '{notification['timestamp']}' to datetime for notification {notification['id']}", file=sys.stderr)
             user_notifications.append(notification)
 
-    except psycopg2.Error as e:
-        print(f"Database error fetching notifications: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching notifications: {e}", file=sys.stderr)
         flash('Error loading notifications.', 'error')
         user_notifications = []
     finally:
@@ -1179,8 +1201,8 @@ def mark_notification_read(notification_id):
         if notification:
             cursor.execute("UPDATE notifications SET read = 1 WHERE id = %s", (notification_id,))
             conn.commit()
-    except psycopg2.Error as e:
-        print(f"Database error marking notification as read: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error marking notification as read: {e}", file=sys.stderr)
         flash('Error marking notification as read.', 'error')
     finally:
         if conn:
@@ -1215,8 +1237,8 @@ def api_unread_notifications():
         cursor.execute("SELECT COUNT(*) FROM notifications WHERE user_id = %s AND read = 0", (user['id'],))
         unread_count_data = cursor.fetchone()
         unread_count = unread_count_data[0] if unread_count_data else 0
-    except psycopg2.Error as e:
-        print(f"Database error fetching unread notification count: {e}")
+    except (psycopg2.Error, ConnectionError, ValueError) as e:
+        print(f"Database error fetching unread notification count: {e}", file=sys.stderr)
         unread_count = 0 # Default to 0 on error
     finally:
         if conn:
@@ -1312,7 +1334,8 @@ def regex_search_filter(s, pattern):
     return match.group(0) if match else None
 
 if __name__ == '__main__':
-    # Run the Flask app in debug mode. In production, use a production-ready WSGI server.
+    # This block is for local development only.
+    # On Render, a WSGI server (like Gunicorn) will run your app.
     # For local testing, ensure DATABASE_URL is set (e.g., via a .env file or directly in your shell)
     # Example: export DATABASE_URL="postgresql://user:password@host:port/database"
     app.run(debug=True, host='0.0.0.0', port=5000)
